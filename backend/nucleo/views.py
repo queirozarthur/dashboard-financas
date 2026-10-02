@@ -1,12 +1,14 @@
-import re
-
 from django.db.models import ProtectedError, Q
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from . import dashboard
 from .models import Categoria, Conta, Transacao
+from .periodos import Mes
 from .serializers import CategoriaSerializer, ContaSerializer, TransacaoSerializer
 
 
@@ -68,8 +70,8 @@ class TransacaoViewSet(DoUsuarioViewSet):
 
         parametros = self.request.query_params
         if mes := parametros.get('mes'):
-            ano, numero_mes = ler_mes(mes)
-            transacoes = transacoes.filter(data__year=ano, data__month=numero_mes)
+            mes = ler_mes(mes)
+            transacoes = transacoes.filter(data__gte=mes.primeiro_dia(), data__lt=mes.fim_exclusivo())
         if conta := parametros.get('conta'):
             conta = ler_id(conta, 'conta')
             # Extrato: o que saiu da conta e as transferências que chegaram nela
@@ -79,11 +81,33 @@ class TransacaoViewSet(DoUsuarioViewSet):
         return transacoes
 
 
+class DashboardView(APIView):
+    def get(self, request):
+        mes = ler_mes_ou_atual(request.query_params.get('mes'))
+        return Response(dashboard.resumo_do_mes(request.user, mes))
+
+
+class EvolucaoView(APIView):
+    MAXIMO_DE_MESES = 24
+
+    def get(self, request):
+        ultimo_mes = ler_mes_ou_atual(request.query_params.get('mes'))
+        quantidade = request.query_params.get('meses', '6')
+        if not quantidade.isdigit() or not 1 <= int(quantidade) <= self.MAXIMO_DE_MESES:
+            raise ValidationError({'meses': f'Informe um número de 1 a {self.MAXIMO_DE_MESES}.'})
+        return Response(dashboard.evolucao(request.user, ultimo_mes, int(quantidade)))
+
+
 def ler_mes(texto):
-    if not re.fullmatch(r'\d{4}-(0[1-9]|1[0-2])', texto):
-        raise ValidationError({'mes': 'Use o formato AAAA-MM, por exemplo 2026-10.'})
-    ano, mes = texto.split('-')
-    return int(ano), int(mes)
+    try:
+        return Mes.ler(texto)
+    except ValueError:
+        raise ValidationError({'mes': 'Use o formato AAAA-MM, por exemplo 2026-10.'}) from None
+
+
+def ler_mes_ou_atual(texto):
+    # localdate usa o TIME_ZONE do settings, não o UTC do servidor
+    return ler_mes(texto) if texto else Mes.de(timezone.localdate())
 
 
 def ler_id(texto, nome):

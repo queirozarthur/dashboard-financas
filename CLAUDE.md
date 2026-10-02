@@ -72,6 +72,19 @@ Validações da `Transacao` (no serializer):
 - `GET /api/dashboard/?mes=2026-10`: receitas, despesas e resultado do mês, saldo total das contas, gastos por categoria, fixo × variável e a comparação com o mês anterior.
 - `GET /api/dashboard/evolucao/?meses=6`: receitas e despesas dos últimos meses.
 
+## Decisões já tomadas
+
+- Apagar conta ou categoria com transações é bloqueado (`on_delete=PROTECT`); a API responde 409.
+- Nome de conta é único por usuário; nome de categoria é único por usuário + natureza.
+- As regras da transação que não dependem de outra tabela também são `CheckConstraint` no PostgreSQL.
+- Não dá para mudar a natureza de uma categoria que já tem transações.
+- JWT: access de 15 min, refresh de 7 dias com rotação e lista negra. Toda rota exige login por padrão.
+- `?conta=<id>` nas transações funciona como extrato (inclui transferências recebidas).
+- Transações paginadas de 50 em 50; contas e categorias sem paginação.
+- Dashboard: `saldo_total` é o saldo no último dia do mês escolhido; fixo × variável considera só despesas; sem `?mes`, usa o mês atual no fuso local.
+- Evolução: padrão 6 meses, máximo 24, meses vazios com zero, `?mes` escolhe o último mês da série.
+- Testes usam hash de senha MD5 (só quando `test` está no `sys.argv`).
+
 ## Ordem dos passos
 
 1. Ambiente: venv, dependências, projeto Django, PostgreSQL via `.env`, `.gitignore`, primeiro commit.

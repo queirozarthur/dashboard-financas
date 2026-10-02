@@ -8,12 +8,14 @@ from django.db.models.functions import Coalesce
 DINHEIRO = DecimalField(max_digits=14, decimal_places=2)
 
 
-def _soma_por_conta(campo_conta, valor_assinado):
+def _soma_por_conta(campo_conta, valor_assinado, ate):
     # Subquery em vez de Sum direto na Conta: somar duas relações reversas
     # (transacoes e transferencias_recebidas) no mesmo JOIN multiplicaria as linhas
+    transacoes = Transacao.objects.filter(**{campo_conta: OuterRef('pk')})
+    if ate is not None:
+        transacoes = transacoes.filter(data__lte=ate)
     soma = (
-        Transacao.objects.filter(**{campo_conta: OuterRef('pk')})
-        .order_by()
+        transacoes.order_by()
         .values(campo_conta)
         .annotate(total=Sum(valor_assinado, output_field=DINHEIRO))
         .values('total')
@@ -22,7 +24,8 @@ def _soma_por_conta(campo_conta, valor_assinado):
 
 
 class ContaQuerySet(models.QuerySet):
-    def com_saldo(self):
+    def com_saldo(self, ate=None):
+        """Anota `saldo`; com `ate`, considera só as transações até essa data (inclusive)."""
         saidas_e_entradas = Case(
             When(tipo='receita', then=F('valor')),
             default=-F('valor'),
@@ -30,8 +33,8 @@ class ContaQuerySet(models.QuerySet):
         )
         return self.annotate(
             saldo=F('saldo_inicial')
-            + _soma_por_conta('conta', saidas_e_entradas)
-            + _soma_por_conta('conta_destino', F('valor'))
+            + _soma_por_conta('conta', saidas_e_entradas, ate)
+            + _soma_por_conta('conta_destino', F('valor'), ate)
         )
 
 
