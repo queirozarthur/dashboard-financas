@@ -1,4 +1,4 @@
-from django.db.models import ProtectedError, Q
+from django.db.models import Prefetch, ProtectedError, Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError
@@ -7,9 +7,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import dashboard
-from .models import Categoria, Conta, Transacao
+from .models import Categoria, Compra, Conta, Transacao
 from .periodos import Mes
-from .serializers import CategoriaSerializer, ContaSerializer, TransacaoSerializer
+from .serializers import (
+    CategoriaSerializer,
+    CompraSerializer,
+    ContaSerializer,
+    TransacaoSerializer,
+)
 
 
 class DoUsuarioViewSet(viewsets.ModelViewSet):
@@ -79,6 +84,27 @@ class TransacaoViewSet(DoUsuarioViewSet):
         if categoria := parametros.get('categoria'):
             transacoes = transacoes.filter(categoria=ler_id(categoria, 'categoria'))
         return transacoes
+
+
+class CompraViewSet(DoUsuarioViewSet):
+    model = Compra
+    serializer_class = CompraSerializer
+    pagination_class = PaginacaoTransacoes
+    # Sem edição: para corrigir uma compra, apaga e lança de novo
+    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        parcelas = Transacao.objects.order_by('numero_parcela')
+        return (
+            super().get_queryset()
+            .select_related('cartao', 'categoria')
+            .prefetch_related(Prefetch('parcelas_geradas', queryset=parcelas))
+        )
+
+    # Relê a compra para a resposta trazer as parcelas com a mesma consulta da listagem
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
 
 
 class DashboardView(APIView):

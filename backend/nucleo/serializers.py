@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from .models import Categoria, Conta, Transacao
+from .cartao import registrar_compra
+from .models import Categoria, Compra, Conta, Transacao
 
 
 class DoUsuarioMixin:
@@ -14,7 +15,25 @@ class ContaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Conta
-        fields = ['id', 'nome', 'tipo', 'saldo_inicial', 'saldo']
+        fields = ['id', 'nome', 'tipo', 'saldo_inicial', 'dia_fechamento', 'dia_vencimento', 'saldo']
+        extra_kwargs = {
+            'dia_fechamento': {'min_value': 1, 'max_value': 31},
+            'dia_vencimento': {'min_value': 1, 'max_value': 31},
+        }
+
+    def validate(self, dados):
+        def atual(campo):
+            return dados.get(campo, getattr(self.instance, campo, None))
+
+        dias = {campo: atual(campo) for campo in ['dia_fechamento', 'dia_vencimento']}
+        # Mesma regra da CheckConstraint; checar aqui devolve 400 com mensagem, não 500
+        if atual('tipo') == Conta.Tipo.CARTAO:
+            erros = {campo: 'Cartão exige este dia.' for campo, dia in dias.items() if dia is None}
+        else:
+            erros = {campo: 'Só cartão tem este dia.' for campo, dia in dias.items() if dia is not None}
+        if erros:
+            raise serializers.ValidationError(erros)
+        return dados
 
     def validate_nome(self, nome):
         # A UniqueConstraint usa o usuario, que não vem do cliente; sem esta checagem
@@ -120,3 +139,63 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         if erros:
             raise serializers.ValidationError(erros)
         return dados
+
+
+class ParcelaSerializer(serializers.ModelSerializer):
+    numero = serializers.SerializerMethodField()
+    vencimento = serializers.DateField(source='data')
+
+    class Meta:
+        model = Transacao
+        fields = ['id', 'numero', 'valor', 'vencimento']
+
+    def get_numero(self, parcela):
+        return f'{parcela.numero_parcela}/{parcela.compra.parcelas}'
+
+
+class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
+    # Limite contra um número absurdo de parcelas, que geraria milhares de transações
+    MAXIMO_DE_PARCELAS = 48
+
+    cartao_nome = serializers.CharField(source='cartao.nome', read_only=True)
+    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
+    parcelas_geradas = ParcelaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Compra
+        fields = [
+            'id', 'descricao', 'valor_total', 'parcelas', 'data_compra',
+            'cartao', 'cartao_nome',
+            'categoria', 'categoria_nome',
+            'parcelas_geradas',
+        ]
+
+    def get_fields(self):
+        campos = super().get_fields()
+        campos['cartao'].queryset = Conta.objects.filter(usuario=self.usuario)
+        campos['categoria'].queryset = Categoria.objects.filter(usuario=self.usuario)
+        return campos
+
+    def validate_cartao(self, cartao):
+        if not cartao.e_cartao:
+            raise serializers.ValidationError('Compras só podem ser lançadas em conta do tipo cartão.')
+        return cartao
+
+    def validate_categoria(self, categoria):
+        if categoria.natureza != Categoria.Natureza.DESPESA:
+            raise serializers.ValidationError('A compra precisa de uma categoria de despesa.')
+        return categoria
+
+    def validate_valor_total(self, valor):
+        if valor <= 0:
+            raise serializers.ValidationError('O valor precisa ser maior que zero.')
+        return valor
+
+    def validate_parcelas(self, parcelas):
+        if not 1 <= parcelas <= self.MAXIMO_DE_PARCELAS:
+            raise serializers.ValidationError(f'Informe de 1 a {self.MAXIMO_DE_PARCELAS} parcelas.')
+        return parcelas
+
+    def create(self, dados):
+        # As parcelas nascem junto com a compra, numa transação só do banco
+        return registrar_compra(**dados)

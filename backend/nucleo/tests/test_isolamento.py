@@ -9,7 +9,7 @@ from .base import BaseAPI
 class TestesSemLogin(BaseAPI):
     def test_todas_as_rotas_exigem_login(self):
         anonimo = APIClient()
-        for rota in ['/api/contas/', '/api/categorias/', '/api/transacoes/']:
+        for rota in ['/api/contas/', '/api/categorias/', '/api/transacoes/', '/api/compras/']:
             with self.subTest(rota=rota):
                 self.assertEqual(anonimo.get(rota).status_code, status.HTTP_401_UNAUTHORIZED)
 
