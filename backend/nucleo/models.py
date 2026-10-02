@@ -1,6 +1,38 @@
+from decimal import Decimal
+
 from django.conf import settings
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import Case, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
+from django.db.models.functions import Coalesce
+
+DINHEIRO = DecimalField(max_digits=14, decimal_places=2)
+
+
+def _soma_por_conta(campo_conta, valor_assinado):
+    # Subquery em vez de Sum direto na Conta: somar duas relações reversas
+    # (transacoes e transferencias_recebidas) no mesmo JOIN multiplicaria as linhas
+    soma = (
+        Transacao.objects.filter(**{campo_conta: OuterRef('pk')})
+        .order_by()
+        .values(campo_conta)
+        .annotate(total=Sum(valor_assinado, output_field=DINHEIRO))
+        .values('total')
+    )
+    return Coalesce(Subquery(soma, output_field=DINHEIRO), Value(Decimal('0')), output_field=DINHEIRO)
+
+
+class ContaQuerySet(models.QuerySet):
+    def com_saldo(self):
+        saidas_e_entradas = Case(
+            When(tipo='receita', then=F('valor')),
+            default=-F('valor'),
+            output_field=DINHEIRO,
+        )
+        return self.annotate(
+            saldo=F('saldo_inicial')
+            + _soma_por_conta('conta', saidas_e_entradas)
+            + _soma_por_conta('conta_destino', F('valor'))
+        )
 
 
 class Conta(models.Model):
@@ -15,6 +47,8 @@ class Conta(models.Model):
     nome = models.CharField(max_length=60)
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
     saldo_inicial = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    objects = ContaQuerySet.as_manager()
 
     class Meta:
         ordering = ['nome']
