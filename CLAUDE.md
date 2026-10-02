@@ -8,6 +8,8 @@ Sistema para controlar minhas finanças: receitas, despesas por categoria, conta
 - Frontend (fase futura): React + Vite + TypeScript, Recharts, TanStack Query. Primeiro mobile-first, instalável como PWA. Usar as skills de front-end instaladas.
 - Ambiente: Windows 11 nativo, terminal PowerShell. O projeto fica fora de pastas sincronizadas pelo OneDrive (está em `C:\Users\queir\Desktop\financas`, que não é sincronizada). Use `python` (não `python3`) e ative o venv com `.venv\Scripts\Activate.ps1`. Comandos de exemplo devem ser em PowerShell.
 - Repositório: https://github.com/queirozarthur/dashboard-financas (**público**).
+- Banco: PostgreSQL 18 local (serviço `postgresql-x64-18`), banco `financas`, credenciais no `.env`.
+- **Controle Inteligente de Aplicativos (Smart App Control) está ligado** e bloqueia o `psql.exe` e a DLL do `psycopg[binary]`. Por isso usamos só `psycopg` (implementação pura em Python), que carrega a `libpq.dll` de `C:\Program Files\PostgreSQL\18\bin` (essa pasta está no PATH do usuário). Não instalar `psycopg[binary]`. O `manage.py dbshell` também não funciona (ele chama o `psql`); para rodar SQL, usar um script com `psycopg` ou uma ferramenta gráfica.
 
 ## Estrutura
 
