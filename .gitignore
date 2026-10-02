@@ -1,0 +1,43 @@
+# Segredos: nunca versionar (o repositório é público)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Django
+*.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+*.log
+
+# Dumps e backups de banco podem conter dados financeiros reais
+*.sql
+*.dump
+*.backup
+
+# Frontend
+node_modules/
+dist/
+.vite/
+
+# Editor e sistema
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Configurações locais do Claude Code
+.claude/settings.local.json
