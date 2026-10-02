@@ -58,8 +58,11 @@ class CategoriaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
 
 class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
     conta_nome = serializers.CharField(source='conta.nome', read_only=True)
-    conta_destino_nome = serializers.CharField(source='conta_destino.nome', read_only=True)
-    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
+    # allow_null: sem isso o DRF omite o campo quando a relação está vazia
+    conta_destino_nome = serializers.CharField(
+        source='conta_destino.nome', read_only=True, allow_null=True
+    )
+    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True, allow_null=True)
 
     class Meta:
         model = Transacao

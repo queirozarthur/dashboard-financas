@@ -11,7 +11,8 @@ Usuario = get_user_model()
 
 
 class TestesLoginJWT(APITestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         Usuario.objects.create_user('ana', password='senha-teste')
 
     def login(self, senha='senha-teste'):

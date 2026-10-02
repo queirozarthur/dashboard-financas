@@ -6,22 +6,23 @@ from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
 from django.test import TestCase
 
-from .models import Categoria, Conta, Transacao
+from nucleo.models import Categoria, Conta, Transacao
 
 Usuario = get_user_model()
 
 
 class BaseModelos(TestCase):
-    def setUp(self):
-        self.usuario = Usuario.objects.create_user('ana', password='senha-teste')
-        self.corrente = Conta.objects.create(
-            usuario=self.usuario, nome='Corrente', tipo=Conta.Tipo.CORRENTE
+    @classmethod
+    def setUpTestData(cls):
+        cls.usuario = Usuario.objects.create_user('ana', password='senha-teste')
+        cls.corrente = Conta.objects.create(
+            usuario=cls.usuario, nome='Corrente', tipo=Conta.Tipo.CORRENTE
         )
-        self.carteira = Conta.objects.create(
-            usuario=self.usuario, nome='Carteira', tipo=Conta.Tipo.DINHEIRO
+        cls.carteira = Conta.objects.create(
+            usuario=cls.usuario, nome='Carteira', tipo=Conta.Tipo.DINHEIRO
         )
-        self.mercado = Categoria.objects.create(
-            usuario=self.usuario,
+        cls.mercado = Categoria.objects.create(
+            usuario=cls.usuario,
             nome='Mercado',
             natureza=Categoria.Natureza.DESPESA,
             tipo=Categoria.Tipo.VARIAVEL,
