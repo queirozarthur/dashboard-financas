@@ -85,6 +85,20 @@ Validações da `Transacao` (no serializer):
 - Evolução: padrão 6 meses, máximo 24, meses vazios com zero, `?mes` escolhe o último mês da série.
 - Testes usam hash de senha MD5 (só quando `test` está no `sys.argv`).
 
+## Cartão de crédito (fase 1b)
+
+- **Cartão é uma `Conta` com `tipo=cartao`**, com `dia_fechamento` e `dia_vencimento` (1–31; em mês mais curto vale o último dia). Saldo negativo = dívida.
+- **`Compra`** (usuario, cartao, categoria, descricao, valor_total, parcelas, data_compra) gera N `Transacao` do tipo `despesa` na conta do cartão, com `compra` e `numero_parcela`. A `data` de cada parcela é o **vencimento da fatura** em que ela cai, então a dashboard mostra cada parcela no mês da sua fatura.
+- Centavos da divisão vão na primeira parcela (100,00 em 3x = 33,34 + 33,33 + 33,33).
+- Compra antes do dia de fechamento entra na fatura que fecha naquele mês; no dia do fechamento ou depois, na seguinte. O vencimento cai no mesmo mês do fechamento se `dia_vencimento > dia_fechamento`, senão no mês seguinte.
+- **Fatura é calculada, não armazenada:** parcelas do cartão com a mesma data de vencimento.
+- **Pagamento = transferência** da conta para o cartão (não é despesa). Só pagamento total: valor igual ao total da fatura, fatura já fechada, uma vez só. Parcelas de fatura paga não podem ser apagadas.
+- Cada parcela mostra número (`3/12`), vencimento, situação (paga/pendente) e data de pagamento (data da transferência que pagou a fatura).
+- Apagar a compra apaga as parcelas (se nenhuma estiver em fatura paga). Editar compra: apagar e lançar de novo.
+- O `saldo_total` da dashboard desconta só parcelas que vencem até o fim do mês; a dívida total aparece no saldo do cartão.
+- Fora da primeira versão: limite disponível, estorno, editar compra parcelada, antecipar parcelas.
+- Passos: C1 models e regras de fatura; C2 API de compras; C3 faturas e pagamento; C4 conferir a dashboard com cartão.
+
 ## Ordem dos passos
 
 1. Ambiente: venv, dependências, projeto Django, PostgreSQL via `.env`, `.gitignore`, primeiro commit.
@@ -96,7 +110,6 @@ Validações da `Transacao` (no serializer):
 
 ## Fora do escopo por enquanto
 
-- Cartão de crédito (parcelas, fatura): conversa separada depois da fase 1.
 - Recorrências, orçamentos, metas e investimentos: fases seguintes.
 - Funcionalidades de freelancer (contas a receber, MEI): decidi não incluir.
 - Telas: só depois do backend estar testado.

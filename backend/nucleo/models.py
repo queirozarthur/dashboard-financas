@@ -43,6 +43,7 @@ class Conta(models.Model):
         CORRENTE = 'corrente', 'Corrente'
         DINHEIRO = 'dinheiro', 'Dinheiro'
         INVESTIMENTO = 'investimento', 'Investimento'
+        CARTAO = 'cartao', 'Cartão de crédito'
 
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='contas'
@@ -50,6 +51,9 @@ class Conta(models.Model):
     nome = models.CharField(max_length=60)
     tipo = models.CharField(max_length=12, choices=Tipo.choices)
     saldo_inicial = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Só para cartão; em mês mais curto, dia 31 vira o último dia do mês
+    dia_fechamento = models.PositiveSmallIntegerField(null=True, blank=True)
+    dia_vencimento = models.PositiveSmallIntegerField(null=True, blank=True)
 
     objects = ContaQuerySet.as_manager()
 
@@ -61,7 +65,35 @@ class Conta(models.Model):
                 name='conta_nome_unico_por_usuario',
                 violation_error_message='Você já tem uma conta com esse nome.',
             ),
+            models.CheckConstraint(
+                condition=(
+                    # isnull=False explícito: no CHECK, NULL >= 1 não é falso, é "desconhecido",
+                    # e o PostgreSQL aceita a linha
+                    Q(
+                        tipo='cartao',
+                        dia_fechamento__isnull=False,
+                        dia_vencimento__isnull=False,
+                        dia_fechamento__gte=1,
+                        dia_fechamento__lte=31,
+                        dia_vencimento__gte=1,
+                        dia_vencimento__lte=31,
+                    )
+                    | (
+                        ~Q(tipo='cartao')
+                        & Q(dia_fechamento__isnull=True, dia_vencimento__isnull=True)
+                    )
+                ),
+                name='conta_dias_so_no_cartao',
+                violation_error_message=(
+                    'Cartão exige dia de fechamento e de vencimento entre 1 e 31; '
+                    'as outras contas não têm esses dias.'
+                ),
+            ),
         ]
+
+    @property
+    def e_cartao(self):
+        return self.tipo == self.Tipo.CARTAO
 
     def __str__(self):
         return self.nome
@@ -127,6 +159,11 @@ class Transacao(models.Model):
     valor = models.DecimalField(max_digits=12, decimal_places=2)
     data = models.DateField()
     tipo = models.CharField(max_length=13, choices=Tipo.choices)
+    # Preenchidos só nas parcelas de uma compra no cartão; apagar a compra apaga as parcelas
+    compra = models.ForeignKey(
+        'Compra', on_delete=models.CASCADE, null=True, blank=True, related_name='parcelas_geradas'
+    )
+    numero_parcela = models.PositiveSmallIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['-data', '-id']
@@ -163,7 +200,56 @@ class Transacao(models.Model):
                 name='transacao_destino_diferente',
                 violation_error_message='A conta de destino precisa ser diferente da conta de origem.',
             ),
+            models.CheckConstraint(
+                condition=(
+                    Q(compra__isnull=True, numero_parcela__isnull=True)
+                    | Q(
+                        compra__isnull=False,
+                        numero_parcela__isnull=False,
+                        numero_parcela__gte=1,
+                        tipo='despesa',
+                    )
+                ),
+                name='transacao_parcela_completa',
+                violation_error_message='Parcela exige compra e número, e é sempre despesa.',
+            ),
+            models.UniqueConstraint(
+                fields=['compra', 'numero_parcela'],
+                name='transacao_parcela_unica',
+            ),
         ]
 
     def __str__(self):
         return f'{self.data} {self.get_tipo_display()} {self.valor}'
+
+
+class Compra(models.Model):
+    """Compra no cartão; as parcelas são Transacoes geradas por nucleo.cartao.registrar_compra."""
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='compras'
+    )
+    cartao = models.ForeignKey(Conta, on_delete=models.PROTECT, related_name='compras')
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name='compras')
+    descricao = models.CharField(max_length=200, blank=True)
+    valor_total = models.DecimalField(max_digits=12, decimal_places=2)
+    parcelas = models.PositiveSmallIntegerField(default=1)
+    data_compra = models.DateField()
+
+    class Meta:
+        ordering = ['-data_compra', '-id']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valor_total__gt=0),
+                name='compra_valor_positivo',
+                violation_error_message='O valor precisa ser maior que zero.',
+            ),
+            models.CheckConstraint(
+                condition=Q(parcelas__gte=1),
+                name='compra_ao_menos_uma_parcela',
+                violation_error_message='A compra precisa ter pelo menos uma parcela.',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.data_compra} {self.descricao} {self.valor_total} em {self.parcelas}x'
