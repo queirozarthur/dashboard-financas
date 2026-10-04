@@ -1,8 +1,8 @@
-import type { FC } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import { useMesSelecionado } from '@/core/hooks'
 import { AvisoDeErro, SeletorDeMes, Tela } from '@/core/ui'
-import { cn, lerMes, nomeDoMes } from '@/core/utils'
+import { cn, lerMes, nomeDoMes, type Mes } from '@/core/utils'
 
 import { temValor } from './comparacao'
 import { BlocoDaEvolucao } from './components/BlocoDaEvolucao'
@@ -25,12 +25,31 @@ const mesVazio = (dados: Dashboard): boolean => {
   )
 }
 
+type ApagavelProps = {
+  desatualizado: boolean
+  children: ReactNode
+}
+
+// Durante a troca de mês, o conteúdo antigo fica na tela, apagado, até o novo chegar
+const Apagavel: FC<ApagavelProps> = ({ desatualizado, children }) => {
+  return (
+    <div
+      aria-busy={desatualizado}
+      className={cn('transition-opacity duration-200', desatualizado && 'opacity-60')}
+    >
+      {children}
+    </div>
+  )
+}
+
 type ConteudoDoMesProps = {
   dados: Dashboard
   desatualizado: boolean
+  mes: Mes
 }
 
-const ConteudoDoMes: FC<ConteudoDoMesProps> = ({ dados, desatualizado }) => {
+// Ordem: o número principal, depois os gráficos (visão geral), depois as listas (detalhe)
+const ConteudoDoMes: FC<ConteudoDoMesProps> = ({ dados, desatualizado, mes }) => {
   // Nomes vêm do mês dos dados, não da URL: durante a troca, o mês antigo continua bem rotulado
   const nomes = {
     nomeDoMes: nomeNaFrase(dados.mes),
@@ -38,24 +57,28 @@ const ConteudoDoMes: FC<ConteudoDoMesProps> = ({ dados, desatualizado }) => {
   }
 
   return (
-    <div
-      className={cn('transition-opacity duration-200', desatualizado && 'opacity-60')}
-      aria-busy={desatualizado}
-    >
-      <CartaoDoResultado dados={dados} {...nomes} />
-      {mesVazio(dados) ? (
-        <p className="mt-8 px-4 text-center text-conteudo-secundario">
-          Nada lançado em {nomes.nomeDoMes} ainda.
-        </p>
-      ) : (
-        <>
+    <>
+      <Apagavel desatualizado={desatualizado}>
+        <CartaoDoResultado dados={dados} {...nomes} />
+        {mesVazio(dados) ? (
+          <p className="mt-8 px-4 text-center text-conteudo-secundario">
+            Nada lançado em {nomes.nomeDoMes} ainda.
+          </p>
+        ) : null}
+      </Apagavel>
+
+      {/* A evolução tem a própria busca e o próprio "apagado"; termina no mês da URL */}
+      <BlocoDaEvolucao mes={mes} />
+
+      {mesVazio(dados) ? null : (
+        <Apagavel desatualizado={desatualizado}>
+          <GastosDoMes dados={dados} />
           <GrupoEntradasESaidas dados={dados} {...nomes} />
           <GrupoPrevisto dados={dados} {...nomes} />
           <GrupoOrcamentos dados={dados} {...nomes} />
-          <GastosDoMes dados={dados} />
-        </>
+        </Apagavel>
       )}
-    </div>
+    </>
   )
 }
 
@@ -77,11 +100,7 @@ export const TelaDashboard: FC = () => {
       )
     }
     return (
-      <>
-        <ConteudoDoMes dados={consulta.data} desatualizado={consulta.isPlaceholderData} />
-        {/* A evolução termina no mês escolhido na URL, mesmo enquanto o mês ainda carrega */}
-        <BlocoDaEvolucao mes={mes} />
-      </>
+      <ConteudoDoMes dados={consulta.data} desatualizado={consulta.isPlaceholderData} mes={mes} />
     )
   }
 

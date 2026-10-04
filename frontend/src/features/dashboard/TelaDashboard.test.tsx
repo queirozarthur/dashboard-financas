@@ -139,6 +139,31 @@ describe('TelaDashboard', () => {
     ])
   })
 
+  it('ordem: resultado, gráficos e depois as listas', async () => {
+    servir()
+    abrir()
+    await screen.findByRole('table')
+    const titulos = screen.getAllByRole('heading', { level: 2 }).map((titulo) => {
+      return titulo.textContent
+    })
+    expect(titulos).toEqual([
+      'Resultado de outubro',
+      'Últimos 6 meses',
+      'Fixo e variável',
+      'Gastos por categoria',
+      'Entradas e saídas',
+      'Ainda previsto em outubro',
+      'Orçamentos',
+    ])
+  })
+
+  it('mês vazio ainda mostra a evolução dos meses anteriores', async () => {
+    servir({ dashboard: VAZIO })
+    abrir()
+    await screen.findByText('Nada lançado em outubro ainda.')
+    expect(await screen.findByRole('heading', { name: 'Últimos 6 meses' })).toBeInTheDocument()
+  })
+
   it('mostra resultado, saldo e projeção no destaque', async () => {
     servir()
     abrir()
