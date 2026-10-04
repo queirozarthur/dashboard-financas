@@ -351,3 +351,38 @@ class Recorrencia(models.Model):
 
     def __str__(self):
         return f'{self.descricao} (dia {self.dia})'
+
+
+class Orcamento(models.Model):
+    """Limite mensal de gasto de uma categoria, válido de `inicio` até a próxima vigência."""
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orcamentos'
+    )
+    categoria = models.ForeignKey(Categoria, on_delete=models.PROTECT, related_name='orcamentos')
+    valor = models.DecimalField(max_digits=12, decimal_places=2)
+    # Primeiro dia do mês a partir do qual o limite vale
+    inicio = models.DateField()
+
+    class Meta:
+        ordering = ['categoria__nome', '-inicio']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valor__gt=0),
+                name='orcamento_valor_positivo',
+                violation_error_message='O limite precisa ser maior que zero.',
+            ),
+            models.CheckConstraint(
+                condition=Q(inicio__day=1),
+                name='orcamento_inicio_e_um_mes',
+                violation_error_message='O início é um mês (primeiro dia).',
+            ),
+            models.UniqueConstraint(
+                fields=['categoria', 'inicio'],
+                name='orcamento_uma_vigencia_por_mes',
+                violation_error_message='Esta categoria já tem um limite começando neste mês.',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.categoria.nome}: {self.valor} desde {self.inicio:%m/%Y}'

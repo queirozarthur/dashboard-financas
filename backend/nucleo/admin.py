@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Categoria, Compra, Conta, Recorrencia, Transacao
+from .models import Categoria, Compra, Conta, Orcamento, Recorrencia, Transacao
 
 
 @admin.register(Conta)
@@ -61,3 +61,10 @@ class RecorrenciaAdmin(admin.ModelAdmin):
     list_filter = ['tipo', 'conta', 'usuario']
     list_select_related = ['conta', 'categoria', 'usuario']
     search_fields = ['descricao']
+
+
+@admin.register(Orcamento)
+class OrcamentoAdmin(admin.ModelAdmin):
+    list_display = ['categoria', 'valor', 'inicio', 'usuario']
+    list_filter = ['usuario']
+    list_select_related = ['categoria', 'usuario']

@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .cartao import ErroDeFatura, registrar_compra
-from .models import Categoria, Compra, Conta, Recorrencia, Transacao
+from .models import Categoria, Compra, Conta, Orcamento, Recorrencia, Transacao
 from .periodos import Mes
 from .recorrencias import data_sugerida
 
@@ -66,15 +66,19 @@ class CategoriaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
                 {'nome': 'Você já tem uma categoria com esse nome e natureza.'}
             )
 
-        # Trocar a natureza deixaria transações e recorrências com categoria incompatível
+        # Trocar a natureza deixaria transações, recorrências e orçamentos incompatíveis
         if (
             self.instance
             and natureza != self.instance.natureza
-            and (self.instance.transacoes.exists() or self.instance.recorrencias.exists())
+            and (
+                self.instance.transacoes.exists()
+                or self.instance.recorrencias.exists()
+                or self.instance.orcamentos.exists()
+            )
         ):
             raise serializers.ValidationError(
                 {'natureza': 'Não é possível mudar a natureza de uma categoria que já tem '
-                             'transações ou recorrências.'}
+                             'transações, recorrências ou orçamentos.'}
             )
         return dados
 
@@ -402,4 +406,44 @@ class ConfirmarSerializer(DoUsuarioMixin, serializers.Serializer):
         # Trocar a conta não pode quebrar as regras (cartão, destino igual à origem)
         if 'conta' in dados:
             validar_lancamento({'conta': dados['conta']}, self.context['recorrencia'])
+        return dados
+
+
+class OrcamentoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
+    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
+    inicio = CampoMes()
+
+    class Meta:
+        model = Orcamento
+        fields = ['id', 'categoria', 'categoria_nome', 'valor', 'inicio']
+        # Sem o validador automático da UniqueConstraint: ele responderia em non_field_errors;
+        # o validate() abaixo aponta o erro no campo `inicio`
+        validators = []
+
+    def get_fields(self):
+        campos = super().get_fields()
+        campos['categoria'].queryset = Categoria.objects.filter(usuario=self.usuario)
+        return campos
+
+    def validate_categoria(self, categoria):
+        if categoria.natureza != Categoria.Natureza.DESPESA:
+            raise serializers.ValidationError('Orçamento é só para categoria de despesa.')
+        return categoria
+
+    def validate_valor(self, valor):
+        if valor <= 0:
+            raise serializers.ValidationError('O limite precisa ser maior que zero.')
+        return valor
+
+    def validate(self, dados):
+        categoria = dados.get('categoria', getattr(self.instance, 'categoria', None))
+        inicio = dados.get('inicio', getattr(self.instance, 'inicio', None))
+        # A UniqueConstraint daria erro 500; aqui vira uma mensagem
+        repetidos = Orcamento.objects.filter(categoria=categoria, inicio=inicio)
+        if self.instance:
+            repetidos = repetidos.exclude(pk=self.instance.pk)
+        if repetidos.exists():
+            raise serializers.ValidationError(
+                {'inicio': 'Esta categoria já tem um limite começando neste mês; edite esse limite.'}
+            )
         return dados

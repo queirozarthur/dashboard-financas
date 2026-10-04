@@ -84,6 +84,7 @@ Validações da `Transacao` (no serializer):
 - Dashboard: `saldo_total` é o saldo no último dia do mês escolhido; fixo × variável considera só despesas; sem `?mes`, usa o mês atual no fuso local.
 - Evolução: padrão 6 meses, máximo 24, meses vazios com zero, `?mes` escolhe o último mês da série.
 - Testes usam hash de senha MD5 (só quando `test` está no `sys.argv`).
+- A dashboard conta o realizado pela `data` da transação, nunca pela competência: é quando o dinheiro sai, igual ao saldo e às parcelas do cartão.
 
 ## Cartão de crédito (fase 1b)
 
@@ -114,6 +115,14 @@ Validações da `Transacao` (no serializer):
 - Rotas: CRUD em `/api/recorrencias/` (`inicio`/`fim` como `AAAA-MM`), `GET /api/recorrencias/previstas/?mes=`, `POST /api/recorrencias/<id>/confirmar/` com `{mes, valor?, data?, conta?}` (409 se já confirmada).
 - Passos: R1 model e regras; R2 API (cadastro, previstos, confirmação); R3 bloco previsto na dashboard. **Todos concluídos.**
 
+## Orçamentos (fase 2b)
+
+- **`Orcamento`** (usuario, categoria só de despesa, valor, inicio): o limite vale de `inicio` em diante, até existir outro mais novo para a mesma categoria. Mudar o limite cria uma nova vigência; meses antigos mantêm o limite antigo. Um orçamento por categoria por mês de início.
+- A sobra não passa para o mês seguinte.
+- Dashboard ganha `orcamentos`: por categoria com limite, `limite`, `gasto` (realizado pela data, inclui parcelas do cartão), `previsto` (recorrências não confirmadas da categoria), `restante` (limite − gasto − previsto, pode ser negativo) e `percentual`; mais uma linha de total.
+- Rotas: CRUD em `/api/orcamentos/` (`inicio` como `AAAA-MM`); `?mes=AAAA-MM` lista os limites que valem no mês.
+- Passos: O1 model, regra de vigência e API; O2 bloco na dashboard.
+
 ## Ordem dos passos
 
 1. Ambiente: venv, dependências, projeto Django, PostgreSQL via `.env`, `.gitignore`, primeiro commit.
@@ -125,6 +134,6 @@ Validações da `Transacao` (no serializer):
 
 ## Fora do escopo por enquanto
 
-- Orçamentos (próximo, depois das recorrências), depois as telas; metas e investimentos em fases seguintes.
+- Depois dos orçamentos vêm as telas; metas e investimentos em fases seguintes.
 - Funcionalidades de freelancer (contas a receber, MEI): decidi não incluir.
 - Telas: só depois do backend estar testado.

@@ -18,7 +18,8 @@ from .cartao import (
     montar_fatura,
     pagar_fatura,
 )
-from .models import Categoria, Compra, Conta, Recorrencia, Transacao
+from .models import Categoria, Compra, Conta, Orcamento, Recorrencia, Transacao
+from .orcamentos import vigentes
 from .periodos import Mes
 from .serializers import (
     CategoriaSerializer,
@@ -26,6 +27,7 @@ from .serializers import (
     ConfirmarSerializer,
     ContaSerializer,
     FaturaSerializer,
+    OrcamentoSerializer,
     PagarFaturaSerializer,
     PrevistaSerializer,
     RecorrenciaSerializer,
@@ -49,7 +51,7 @@ class DoUsuarioViewSet(viewsets.ModelViewSet):
         except ProtectedError:
             return conflito(
                 'Não é possível apagar: existem lançamentos ligados a este registro '
-                '(transações, compras ou recorrências).'
+                '(transações, compras, recorrências ou orçamentos).'
             )
 
 
@@ -171,6 +173,16 @@ class RecorrenciaViewSet(DoUsuarioViewSet):
             raise ValidationError({'mes': [str(erro)]}) from None
         dados = TransacaoSerializer(transacao, context={'request': request}).data
         return Response(dados, status=status.HTTP_201_CREATED)
+
+
+class OrcamentoViewSet(DoUsuarioViewSet):
+    model = Orcamento
+    serializer_class = OrcamentoSerializer
+
+    def get_queryset(self):
+        if self.action == 'list' and (mes := self.request.query_params.get('mes')):
+            return vigentes(self.request.user, ler_mes(mes))
+        return super().get_queryset().select_related('categoria')
 
 
 class FaturaView(APIView):
