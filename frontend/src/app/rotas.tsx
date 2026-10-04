@@ -5,7 +5,7 @@ import { TelaDashboard } from '@/features/dashboard'
 import { TelaLancamentos } from '@/features/lancamentos'
 
 import { LayoutPrincipal } from './layout'
-import { TelaCartoes, TelaMais, TelaNovo } from './telasProvisorias'
+import { TelaCartoes, TelaMais } from './telasProvisorias'
 
 export const rotas: RouteObject[] = [
   { path: '/entrar', element: <TelaEntrar /> },
@@ -17,7 +17,6 @@ export const rotas: RouteObject[] = [
         children: [
           { index: true, element: <TelaDashboard /> },
           { path: 'lancamentos', element: <TelaLancamentos /> },
-          { path: 'novo', element: <TelaNovo /> },
           { path: 'cartoes', element: <TelaCartoes /> },
           { path: 'mais', element: <TelaMais /> },
         ],

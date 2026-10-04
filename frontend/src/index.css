@@ -116,6 +116,7 @@
   --color-marca: #08787c; /* verde-azulado: 5,3:1 no branco */
   --color-marca-suave: #e3f1f1; /* fundo de destaque com a marca */
   --color-sobre-marca: #ffffff; /* texto em cima da marca */
+  --color-sobre-alerta: #ffffff; /* texto em cima do vermelho (ex.: "Apagar"): 5,4:1 */
 
   /* Reservadas: só para dinheiro entrando, saindo e alertas */
   --color-receita: #1d7d36; /* 5,2:1 */

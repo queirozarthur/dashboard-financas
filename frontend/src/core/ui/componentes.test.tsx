@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { deveFicarAberta, LARGURA_DA_ACAO } from '@/core/hooks'
+
 import { Grupo, Linha } from './ListaAgrupada'
 import { SeletorDeMes } from './SeletorDeMes'
 import { Valor } from './Valor'
@@ -108,5 +110,35 @@ describe('SeletorDeMes', () => {
     const roteador = comRoteador(<SeletorDeMes />, '/?mes=2026-10&conta=3')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Próximo mês' }))
     expect(new URLSearchParams(roteador.state.location.search).get('conta')).toBe('3')
+  })
+})
+
+describe('Linha com ação ao deslizar', () => {
+  it('fica aberta só depois de passar da metade do botão', () => {
+    expect(deveFicarAberta(-(LARGURA_DA_ACAO / 2))).toBe(true)
+    expect(deveFicarAberta(-(LARGURA_DA_ACAO / 2) + 1)).toBe(false)
+    expect(deveFicarAberta(0)).toBe(false)
+  })
+
+  it('tocar na linha faz a ação normal; o botão escondido não entra no teclado', async () => {
+    const aoTocar = vi.fn()
+    const apagar = vi.fn()
+    comRoteador(
+      <Grupo>
+        <Linha
+          acaoAoDeslizar={{ rotulo: 'Apagar', aoTocar: apagar }}
+          aoTocar={aoTocar}
+          rotulo="Feira"
+        />
+      </Grupo>,
+    )
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Feira' }))
+    expect(aoTocar).toHaveBeenCalledOnce()
+    expect(apagar).not.toHaveBeenCalled()
+
+    // Escondido atrás da linha: fora do leitor de tela e da ordem do Tab até ser revelado
+    const escondido = screen.getByText('Apagar')
+    expect(escondido).toHaveAttribute('aria-hidden', 'true')
+    expect(escondido).toHaveAttribute('tabindex', '-1')
   })
 })

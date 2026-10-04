@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Transacao } from './consts/esquemas'
+import { LancamentoProvider } from './LancamentoProvider'
 import { TelaLancamentos } from './TelaLancamentos'
 
 const base: Transacao = {
@@ -54,6 +55,7 @@ const SETEMBRO = [
     data: '2026-09-05',
     descricao: 'Celular',
     conta_nome: 'Nubank',
+    compra: 9,
     numero_parcela: 3,
   }),
 ]
@@ -110,7 +112,9 @@ const abrir = (caminho = '/lancamentos?mes=2026-09') => {
   })
   render(
     <QueryClientProvider client={clienteQuery}>
-      <RouterProvider router={roteador} />
+      <LancamentoProvider>
+        <RouterProvider router={roteador} />
+      </LancamentoProvider>
     </QueryClientProvider>,
   )
   return roteador
@@ -221,6 +225,27 @@ describe('TelaLancamentos', () => {
     expect(busca.get('conta')).toBeNull()
     expect(busca.get('categoria')).toBeNull()
     expect(busca.get('mes')).toBe('2026-09')
+  })
+
+  it('tocar numa linha abre a folha de edição preenchida', async () => {
+    servir()
+    abrir()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /Feira/ }))
+
+    const folha = await screen.findByRole('dialog', { name: 'Editar lançamento' })
+    expect(within(folha).getByLabelText('Valor')).toHaveValue('R$ 84,30')
+    expect(within(folha).getByLabelText('Descrição')).toHaveValue('Feira')
+    expect(within(folha).getByRole('radio', { name: 'Despesa' })).toBeChecked()
+  })
+
+  it('parcela abre só para leitura, explicando onde mudar', async () => {
+    servir()
+    abrir()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /Celular/ }))
+
+    const folha = await screen.findByRole('dialog', { name: 'Lançamento' })
+    expect(folha).toHaveTextContent('Esta é a parcela 3 de uma compra no cartão')
+    expect(within(folha).queryByRole('button', { name: 'Salvar' })).not.toBeInTheDocument()
   })
 
   it('mês vazio sem filtro só avisa', async () => {

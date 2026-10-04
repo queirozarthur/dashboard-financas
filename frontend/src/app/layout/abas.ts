@@ -7,7 +7,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
-type Aba = {
+type AbaDeTela = {
+  tipo: 'tela'
   rotulo: string
   para: string
   Icone: LucideIcon
@@ -15,10 +16,19 @@ type Aba = {
   exata?: boolean
 }
 
+/** Não troca de tela: abre algo por cima da tela atual (o ＋ abre a folha de lançamento) */
+type AbaDeAcao = {
+  tipo: 'novo-lancamento'
+  rotulo: string
+  Icone: LucideIcon
+}
+
+export type Aba = AbaDeTela | AbaDeAcao
+
 export const ABAS = [
-  { rotulo: 'Início', para: '/', Icone: House, exata: true },
-  { rotulo: 'Lançamentos', para: '/lancamentos', Icone: ArrowLeftRight },
-  { rotulo: 'Novo', para: '/novo', Icone: CirclePlus },
-  { rotulo: 'Cartões', para: '/cartoes', Icone: CreditCard },
-  { rotulo: 'Mais', para: '/mais', Icone: Ellipsis },
+  { tipo: 'tela', rotulo: 'Início', para: '/', Icone: House, exata: true },
+  { tipo: 'tela', rotulo: 'Lançamentos', para: '/lancamentos', Icone: ArrowLeftRight },
+  { tipo: 'novo-lancamento', rotulo: 'Novo', Icone: CirclePlus },
+  { tipo: 'tela', rotulo: 'Cartões', para: '/cartoes', Icone: CreditCard },
+  { tipo: 'tela', rotulo: 'Mais', para: '/mais', Icone: Ellipsis },
 ] as const satisfies readonly Aba[]

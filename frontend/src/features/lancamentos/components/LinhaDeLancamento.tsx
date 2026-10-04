@@ -6,6 +6,9 @@ import { cn } from '@/core/utils'
 
 import { detalheDoLancamento, tituloDoLancamento } from '../apresentacao'
 import type { Transacao } from '../consts/esquemas'
+import { motivoSomenteLeitura } from '../formulario'
+import { useAbrirLancamento } from '../hooks/contextoDoLancamento'
+import { useApagarLancamento } from '../hooks/useMutacoesDeLancamento'
 
 const ICONES: Record<Transacao['tipo'], { Icone: LucideIcon; cor: string }> = {
   receita: { Icone: ArrowDownLeft, cor: 'text-receita' },
@@ -21,8 +24,26 @@ type LinhaDeLancamentoProps = {
 
 export const LinhaDeLancamento: FC<LinhaDeLancamentoProps> = ({ transacao }) => {
   const { Icone, cor } = ICONES[transacao.tipo]
+  const { abrirEdicao } = useAbrirLancamento()
+  const exclusao = useApagarLancamento()
+  // Parcela e pagamento de fatura não se apagam por aqui: a linha não revela o "Apagar"
+  const podeApagar = motivoSomenteLeitura(transacao) === null
+
   return (
     <Linha
+      acaoAoDeslizar={
+        podeApagar
+          ? {
+              rotulo: 'Apagar',
+              aoTocar: () => {
+                exclusao.mutate(transacao.id)
+              },
+            }
+          : undefined
+      }
+      aoTocar={() => {
+        abrirEdicao(transacao)
+      }}
       detalhe={detalheDoLancamento(transacao)}
       icone={
         // Quadradinho arredondado atrás do ícone, como os ícones das listas do iOS

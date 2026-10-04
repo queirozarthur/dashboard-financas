@@ -1,5 +1,6 @@
 export { useAoAparecer } from './useAoAparecer'
 export { deveFechar, useArrastarParaFechar } from './useArrastarParaFechar'
+export { deveFicarAberta, LARGURA_DA_ACAO, useDeslizarLinha } from './useDeslizarLinha'
 export { useMesSelecionado } from './useMesSelecionado'
 export { useTituloRecolhido } from './useTituloRecolhido'
 export { useTransicaoDoMes, type Direcao } from './useTransicaoDoMes'

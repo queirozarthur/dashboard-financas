@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import type { FC, ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { useDeslizarLinha } from '@/core/hooks'
 import { cn } from '@/core/utils'
 
 type GrupoProps = {
@@ -35,6 +36,13 @@ type LinhaProps = {
   /** Ação na própria tela: vira botão */
   aoTocar?: () => void
   tom?: 'normal' | 'perigo'
+  /** No celular, arrastar a linha para a esquerda revela esta ação (ex.: "Apagar") */
+  acaoAoDeslizar?: AcaoAoDeslizar
+}
+
+type AcaoAoDeslizar = {
+  rotulo: string
+  aoTocar: () => void
 }
 
 const CLASSES_DA_LINHA =
@@ -42,14 +50,9 @@ const CLASSES_DA_LINHA =
 
 const CLASSES_INTERATIVAS = 'transition-colors duration-150 active:bg-separador/40'
 
-const ConteudoDaLinha: FC<Omit<LinhaProps, 'para' | 'aoTocar'> & { comSeta: boolean }> = ({
-  rotulo,
-  detalhe,
-  valor,
-  icone,
-  tom = 'normal',
-  comSeta,
-}) => {
+const ConteudoDaLinha: FC<
+  Omit<LinhaProps, 'para' | 'aoTocar' | 'acaoAoDeslizar'> & { comSeta: boolean }
+> = ({ rotulo, detalhe, valor, icone, tom = 'normal', comSeta }) => {
   return (
     <>
       {icone ? <span className="shrink-0 text-marca">{icone}</span> : null}
@@ -72,7 +75,54 @@ const ConteudoDaLinha: FC<Omit<LinhaProps, 'para' | 'aoTocar'> & { comSeta: bool
   )
 }
 
-export const Linha: FC<LinhaProps> = ({ para, aoTocar, ...conteudo }) => {
+type LinhaComAcaoProps = Omit<LinhaProps, 'para' | 'aoTocar' | 'acaoAoDeslizar'> & {
+  aoTocar: () => void
+  acao: AcaoAoDeslizar
+}
+
+/** Linha tocável que, arrastada para a esquerda com o dedo, revela uma ação vermelha atrás. */
+const LinhaComAcao: FC<LinhaComAcaoProps> = ({ aoTocar, acao, ...conteudo }) => {
+  const { deslocamento, arrastando, aberta, fechar, manipuladores } = useDeslizarLinha(true)
+
+  return (
+    <li className="group/linha relative overflow-hidden">
+      {/* Fica atrás da linha; só entra na ordem do teclado quando está à mostra */}
+      <button
+        aria-hidden={!aberta}
+        className="absolute inset-y-0 right-0 w-20 bg-despesa font-medium text-sobre-alerta"
+        onClick={() => {
+          fechar()
+          acao.aoTocar()
+        }}
+        tabIndex={aberta ? 0 : -1}
+        type="button"
+      >
+        {acao.rotulo}
+      </button>
+      <button
+        {...manipuladores}
+        className={cn(
+          CLASSES_DA_LINHA,
+          CLASSES_INTERATIVAS,
+          // pan-y: o navegador cuida da rolagem vertical; o arrasto horizontal fica conosco
+          // Fundo opaco também ao pressionar: um cinza transparente deixaria o vermelho vazar
+          'relative translate-x-(--deslize) touch-pan-y bg-superficie active:bg-fundo',
+          !arrastando && 'transition-[translate] duration-200 ease-out',
+        )}
+        onClick={aoTocar}
+        style={{ '--deslize': `${deslocamento}px` }}
+        type="button"
+      >
+        <ConteudoDaLinha {...conteudo} comSeta={false} />
+      </button>
+    </li>
+  )
+}
+
+export const Linha: FC<LinhaProps> = ({ para, aoTocar, acaoAoDeslizar, ...conteudo }) => {
+  if (aoTocar && acaoAoDeslizar) {
+    return <LinhaComAcao {...conteudo} acao={acaoAoDeslizar} aoTocar={aoTocar} />
+  }
   if (para) {
     return (
       <li className="group/linha">
