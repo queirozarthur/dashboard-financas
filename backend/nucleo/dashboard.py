@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db.models import Q, Sum, Value
 from django.db.models.functions import Coalesce, TruncMonth
 
+from . import recorrencias
 from .models import DINHEIRO, Categoria, Conta, Transacao
 
 ZERO = Decimal('0.00')
@@ -34,6 +35,14 @@ def totais_do_mes(usuario, mes):
     )
     totais['resultado'] = totais['receitas'] - totais['despesas']
     return totais
+
+
+def previsto_do_mes(usuario, mes):
+    # Só receita e despesa, como nos totais: transferência prevista não é ganho nem gasto
+    return recorrencias.previstas(usuario, mes).aggregate(
+        receitas=soma(Q(tipo=Transacao.Tipo.RECEITA)),
+        despesas=soma(Q(tipo=Transacao.Tipo.DESPESA)),
+    )
 
 
 def saldo_total(usuario, ate):
@@ -77,6 +86,7 @@ def fixo_e_variavel(usuario, mes):
 def resumo_do_mes(usuario, mes):
     atual = totais_do_mes(usuario, mes)
     anterior = totais_do_mes(usuario, mes.anterior())
+    previsto = previsto_do_mes(usuario, mes)
     return {
         'mes': str(mes),
         'receitas': texto(atual['receitas']),
@@ -95,6 +105,14 @@ def resumo_do_mes(usuario, mes):
         'variacao': {
             campo: texto(atual[campo] - anterior[campo])
             for campo in ['receitas', 'despesas', 'resultado']
+        },
+        # Recorrências ainda não confirmadas; receitas e despesas acima ficam só com o que aconteceu
+        'previsto': {
+            'receitas': texto(previsto['receitas']),
+            'despesas': texto(previsto['despesas']),
+            'resultado_projetado': texto(
+                atual['resultado'] + previsto['receitas'] - previsto['despesas']
+            ),
         },
     }
 

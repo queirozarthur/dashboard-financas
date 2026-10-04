@@ -110,8 +110,9 @@ Validações da `Transacao` (no serializer):
 - Dia 31 em mês curto vira o último dia. Apagar a transação confirmada volta o mês para previsto.
 - Mês em que não aconteceu fica previsto só naquele mês (sem "pular" na primeira versão).
 - Editar a recorrência afeta só meses não confirmados. Apagar a recorrência mantém as transações confirmadas (`SET_NULL`).
-- Dashboard ganha `previsto`: receitas e despesas previstas e `resultado_projetado`; transferências previstas ficam fora.
-- Passos: R1 model e regras; R2 API (cadastro, previstos, confirmação); R3 bloco previsto na dashboard.
+- Dashboard ganha `previsto`: receitas e despesas previstas e `resultado_projetado`; transferências previstas ficam fora. O realizado segue a `data`; o previsto segue a `competencia` (aluguel de outubro pago em 02/11 conta nas despesas de novembro).
+- Rotas: CRUD em `/api/recorrencias/` (`inicio`/`fim` como `AAAA-MM`), `GET /api/recorrencias/previstas/?mes=`, `POST /api/recorrencias/<id>/confirmar/` com `{mes, valor?, data?, conta?}` (409 se já confirmada).
+- Passos: R1 model e regras; R2 API (cadastro, previstos, confirmação); R3 bloco previsto na dashboard. **Todos concluídos.**
 
 ## Ordem dos passos
 
