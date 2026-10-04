@@ -1,0 +1,46 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+/*
+ * Tokens do tema (só claro), inspirados nas cores de sistema do iOS.
+ * As cores "puras" do iOS (#30b0c7, #34c759, #ff3b30) não passam 4,5:1 como texto no branco;
+ * estas são as variantes escuras, conferidas com o cálculo de contraste da WCAG.
+ */
+@theme {
+  /* SF Pro nos aparelhos Apple; Inter (a mais parecida) no Windows e no Android */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', system-ui, sans-serif;
+
+  /* Título grande das telas do iOS (Large Title: 34pt) */
+  --text-titulo-grande: 34px;
+  --text-titulo-grande--line-height: 41px;
+
+  --color-fundo: #f2f2f7; /* systemGroupedBackground */
+  --color-superficie: #ffffff; /* blocos e cartões sobre o fundo */
+  --color-conteudo: #1c1c1e; /* texto principal: 17:1 */
+  --color-conteudo-secundario: #6e6e73; /* legendas: 5,1:1 no branco, 4,5:1 no fundo */
+  --color-separador: #c6c6c8; /* linhas entre itens de uma lista */
+
+  --color-marca: #08787c; /* verde-azulado: 5,3:1 no branco */
+  --color-marca-suave: #e3f1f1; /* fundo de destaque com a marca */
+  --color-sobre-marca: #ffffff; /* texto em cima da marca */
+
+  /* Reservadas: só para dinheiro entrando, saindo e alertas */
+  --color-receita: #1d7d36; /* 5,2:1 */
+  --color-despesa: #d70015; /* 5,4:1 */
+  --color-aviso: #c93400; /* 5,3:1 */
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Sem o realce cinza ao tocar em links e botões no iOS */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-fundo font-sans text-conteudo;
+    min-height: 100dvh;
+  }
+}
