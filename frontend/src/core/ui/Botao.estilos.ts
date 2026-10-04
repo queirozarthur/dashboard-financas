@@ -1,4 +1,4 @@
-import { tv } from 'tailwind-variants'
+import { tv } from '@/core/utils'
 
 export const estiloBotao = tv({
   base: [
