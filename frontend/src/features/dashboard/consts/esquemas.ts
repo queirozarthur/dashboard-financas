@@ -44,5 +44,12 @@ export const esquemaDashboard = z.object({
   }),
 })
 
+export const esquemaEvolucao = z.object({
+  meses: z.array(
+    z.object({ mes: z.string(), receitas: dinheiro, despesas: dinheiro, resultado: dinheiro }),
+  ),
+})
+
 export type Dashboard = z.infer<typeof esquemaDashboard>
+export type MesDaEvolucao = z.infer<typeof esquemaEvolucao>['meses'][number]
 export type LinhaDeOrcamento = Dashboard['orcamentos']['categorias'][number]

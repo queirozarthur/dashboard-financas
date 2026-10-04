@@ -16,5 +16,7 @@ export default defineConfig({
     setupFiles: ['./src/testes/configurar.ts'],
     // Endereço fixo nos testes: não depende do .env de quem roda (e nada chama a API de verdade)
     env: { VITE_API_URL: 'http://api.teste/api' },
+    // Testes de tela com digitação simulada passam de 5s quando todos rodam em paralelo
+    testTimeout: 10_000,
   },
 })

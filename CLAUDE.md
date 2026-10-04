@@ -135,8 +135,9 @@ Validações da `Transacao` (no serializer):
 - **Visual "applenizado"** (estilo iOS): fonte do sistema (SF) no Apple e Inter nos outros; títulos grandes que encolhem ao rolar; listas agrupadas em blocos arredondados sobre fundo cinza claro; barra de abas embaixo translúcida com desfoque; formulários como bottom sheet; controle segmentado; números tabulares; resposta ao toque (scale) e animações com mola. **Só tema claro.** Cor principal verde-azulado; verde para receita e vermelho para despesa ficam reservados.
 - Sessão: access token só na memória; refresh no `localStorage` (trocar por cookie httpOnly antes de publicar na internet).
 - Dinheiro chega e volta como texto; só é formatado para exibir, nunca vira float. Nenhuma soma no frontend.
-- Gráficos seguem a skill `dataviz` (paleta validada pelo script, barras em vez de pizza).
-- Passos: T1 base ✓; T2 login e sessão ✓; T3a layout, navegação, título que encolhe, lista agrupada, valor e seletor de mês ✓; T3b campos, controle segmentado e folha (bottom sheet) ✓; T4 dashboard; T5 lançamentos; T6 contas e categorias; T7 cartão; T8 recorrências e orçamentos; T9 PWA.
+- Gráficos seguem a skill `dataviz` (paleta validada pelo script, barras em vez de pizza). **Nos gráficos, receita é verde e despesa é azul** (`--color-serie-despesa`): verde x vermelho falhou no teste de daltonismo. Fixo x variável: azul x laranja. Texto nunca na cor da série; legenda com 2+ séries; tabela escondida (`sr-only`) para leitores de tela.
+- Única exceção ao "dinheiro nunca vira número": `Number()` só para o Recharts calcular a altura das barras (e `flex-grow` da barra fixo x variável). Esse número nunca é somado nem exibido; o texto mostrado vem sempre da API.
+- Passos: T1 base ✓; T2 login e sessão ✓; T3a layout, navegação, título que encolhe, lista agrupada, valor e seletor de mês ✓; T3b campos, controle segmentado e folha (bottom sheet) ✓; T4a dashboard (resultado, previsto, orçamentos) ✓; T4b gráficos (gastos por categoria, fixo x variável, evolução) ✓; T5 lançamentos; T6 contas e categorias; T7 cartão; T8 recorrências e orçamentos; T9 PWA.
 
 ## Ordem dos passos
 

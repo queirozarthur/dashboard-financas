@@ -5,7 +5,9 @@ import { AvisoDeErro, SeletorDeMes, Tela } from '@/core/ui'
 import { cn, lerMes, nomeDoMes } from '@/core/utils'
 
 import { temValor } from './comparacao'
+import { BlocoDaEvolucao } from './components/BlocoDaEvolucao'
 import { GrupoEntradasESaidas, GrupoOrcamentos, GrupoPrevisto } from './components/BlocosDoMes'
+import { GastosDoMes } from './components/GastosDoMes'
 import { CartaoDoResultado } from './components/CartaoDoResultado'
 import { EsqueletoDaDashboard } from './components/EsqueletoDaDashboard'
 import type { Dashboard } from './consts/esquemas'
@@ -50,6 +52,7 @@ const ConteudoDoMes: FC<ConteudoDoMesProps> = ({ dados, desatualizado }) => {
           <GrupoEntradasESaidas dados={dados} {...nomes} />
           <GrupoPrevisto dados={dados} {...nomes} />
           <GrupoOrcamentos dados={dados} {...nomes} />
+          <GastosDoMes dados={dados} />
         </>
       )}
     </div>
@@ -73,7 +76,13 @@ export const TelaDashboard: FC = () => {
         />
       )
     }
-    return <ConteudoDoMes dados={consulta.data} desatualizado={consulta.isPlaceholderData} />
+    return (
+      <>
+        <ConteudoDoMes dados={consulta.data} desatualizado={consulta.isPlaceholderData} />
+        {/* A evolução termina no mês escolhido na URL, mesmo enquanto o mês ainda carrega */}
+        <BlocoDaEvolucao mes={mes} />
+      </>
+    )
   }
 
   return (

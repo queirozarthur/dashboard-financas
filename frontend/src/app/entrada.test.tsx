@@ -41,6 +41,11 @@ const preencherEEntrar = async (usuario: string, senha: string) => {
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchFalso)
   fetchFalso.mockReset()
+  // Depois do login a tela Início busca dados; estes testes não tratam disso, então
+  // qualquer pedido sem resposta combinada recebe "indisponível" na hora
+  fetchFalso.mockImplementation(async () => {
+    return json(503, { detail: 'indisponível nos testes de entrada' })
+  })
   encerrarSessao()
 })
 

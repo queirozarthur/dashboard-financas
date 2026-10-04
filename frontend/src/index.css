@@ -121,6 +121,13 @@
   --color-receita: #1d7d36; /* 5,2:1 */
   --color-despesa: #d70015; /* 5,4:1 */
   --color-aviso: #c93400; /* 5,3:1 */
+
+  /* Séries dos gráficos, conferidas com o validador da skill dataviz (contraste >= 3:1 no branco):
+     receita (verde) x despesa (azul): daltonismo ΔE 23,6, visão normal 24,9 — verde x vermelho
+     falhava (7,4); fixo (azul) x variável (laranja): daltonismo 24,7, visão normal 33,6.
+     Texto nunca usa estas cores: elas vão só nas barras e nas amostras da legenda. */
+  --color-serie-despesa: #2a78d6;
+  --color-serie-variavel: #eb6834;
 }
 
 /* Margens seguras do iPhone (notch, ilha dinâmica, barra de gestos); exigem viewport-fit=cover */
@@ -129,6 +136,18 @@
 }
 @utility pb-seguro {
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Recharts desenha em SVG: eixos e grade discretos, texto com as cores de texto (nunca da série) */
+@layer components {
+  .recharts-cartesian-axis-tick-value {
+    fill: var(--color-conteudo-secundario);
+    font-size: 11px;
+  }
+  .recharts-cartesian-grid line {
+    stroke: var(--color-separador);
+    stroke-opacity: 0.6;
+  }
 }
 
 @layer base {
