@@ -1,0 +1,1 @@
+export { LayoutPrincipal } from './LayoutPrincipal'

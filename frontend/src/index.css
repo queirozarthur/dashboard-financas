@@ -11,9 +11,25 @@
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter Variable', system-ui, sans-serif;
 
-  /* Título grande das telas do iOS (Large Title: 34pt) */
+  /* Escala de texto do iOS (Large Title, Headline/Body, Subheadline, Footnote, Caption 2) */
   --text-titulo-grande: 34px;
   --text-titulo-grande--line-height: 41px;
+  --text-corpo: 17px;
+  --text-corpo--line-height: 22px;
+  --text-subtitulo: 15px;
+  --text-subtitulo--line-height: 20px;
+  --text-nota: 13px;
+  --text-nota--line-height: 18px;
+  --text-legenda: 10px;
+  --text-legenda--line-height: 12px;
+
+  /* Linha fina sob a barra de título quando o conteúdo rola por baixo dela */
+  --shadow-linha: 0 0.5px 0 rgb(0 0 0 / 0.22);
+
+  /* Superfícies que flutuam (barra, folha): sombra suave em vez de borda */
+  --shadow-flutuante:
+    0 0 0 1px rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.08),
+    0 12px 32px -8px rgb(0 0 0 / 0.12);
 
   --color-fundo: #f2f2f7; /* systemGroupedBackground */
   --color-superficie: #ffffff; /* blocos e cartões sobre o fundo */
@@ -31,6 +47,14 @@
   --color-aviso: #c93400; /* 5,3:1 */
 }
 
+/* Margens seguras do iPhone (notch, ilha dinâmica, barra de gestos); exigem viewport-fit=cover */
+@utility pt-seguro {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-seguro {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -40,7 +64,17 @@
   }
 
   body {
-    @apply bg-fundo font-sans text-conteudo;
+    @apply bg-fundo font-sans text-corpo text-conteudo;
     min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }

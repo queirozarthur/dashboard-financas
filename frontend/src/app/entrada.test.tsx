@@ -125,7 +125,9 @@ describe('entrada no app', () => {
     await preencherEEntrar('ana', 'segredo')
     await screen.findByRole('heading', { name: 'Início' })
 
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Sair' }))
+    const usuarioReal = userEvent.setup()
+    await usuarioReal.click(screen.getByRole('link', { name: 'Mais' }))
+    await usuarioReal.click(await screen.findByRole('button', { name: 'Sair' }))
 
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument()
     expect(obterRefresh()).toBeNull()

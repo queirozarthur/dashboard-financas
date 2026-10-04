@@ -15,3 +15,29 @@ export const formatarDinheiro = (valor: string): string => {
   // Intl formata a string decimal direto, sem converter para number (e sem perder centavos)
   return formatoReal.format(valor)
 }
+
+/** receita: verde com "+"; despesa: cor normal com "−"; neutro: só negativo ganha "−" e vermelho */
+export type TomDoValor = 'receita' | 'despesa' | 'neutro'
+
+type ValorApresentado = {
+  texto: string
+  cor: 'receita' | 'alerta' | 'normal'
+}
+
+// Sinal de menos tipográfico (U+2212), mais largo e alinhado que o hífen
+const MENOS = '−'
+
+export const apresentarValor = (valor: string, tom: TomDoValor = 'neutro'): ValorApresentado => {
+  const negativo = valor.startsWith('-')
+  const absoluto = formatarDinheiro(negativo ? valor.slice(1) : valor)
+
+  if (tom === 'receita') {
+    return { texto: `+${absoluto}`, cor: 'receita' }
+  }
+  if (tom === 'despesa') {
+    return { texto: `${MENOS}${absoluto}`, cor: 'normal' }
+  }
+  return negativo
+    ? { texto: `${MENOS}${absoluto}`, cor: 'alerta' }
+    : { texto: absoluto, cor: 'normal' }
+}

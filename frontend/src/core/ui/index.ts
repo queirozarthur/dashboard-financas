@@ -1,4 +1,8 @@
 export { Botao } from './Botao'
 export { estiloBotao } from './Botao.estilos'
 export { Indicador } from './Indicador'
+export { Grupo, Linha } from './ListaAgrupada'
+export { SeletorDeMes } from './SeletorDeMes'
+export { Tela } from './Tela'
 export { TelaCarregando } from './TelaCarregando'
+export { Valor } from './Valor'
