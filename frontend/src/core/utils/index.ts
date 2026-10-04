@@ -3,7 +3,9 @@ export {
   CORES,
   esquemaCor,
   esquemaIcone,
+  NOMES_DAS_CORES,
   NOMES_DOS_ICONES,
+  proximaCor,
   type Cor,
   type NomeDoIcone,
 } from './aparencia'

@@ -1,5 +1,6 @@
 import { useState, type FC } from 'react'
 
+import { useCategorias, useContas } from '@/core/api'
 import { useAoAparecer, useMesSelecionado } from '@/core/hooks'
 import { AvisoDeErro, Botao, Grupo, Indicador, SeletorDeMes, Tela } from '@/core/ui'
 import { cn, nomeDoMes } from '@/core/utils'
@@ -7,7 +8,6 @@ import { cn, nomeDoMes } from '@/core/utils'
 import { agruparPorDia } from './agrupamento'
 import { Filtros } from './components/Filtros'
 import { LinhaDeLancamento } from './components/LinhaDeLancamento'
-import { useCategorias, useContas } from './hooks/useCadastros'
 import { useFiltros } from './hooks/useFiltros'
 import { useTransacoes } from './hooks/useTransacoes'
 

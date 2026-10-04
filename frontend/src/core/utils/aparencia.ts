@@ -48,6 +48,22 @@ export type NomeDoIcone = (typeof NOMES_DOS_ICONES)[number]
 export const esquemaCor = z.enum(CORES).catch('azul')
 export const esquemaIcone = z.enum(NOMES_DOS_ICONES).catch('etiqueta')
 
+export const NOMES_DAS_CORES: Record<Cor, string> = {
+  azul: 'Azul',
+  laranja: 'Laranja',
+  turquesa: 'Turquesa',
+  amarelo: 'Amarelo',
+  rosa: 'Rosa',
+  verde: 'Verde',
+  violeta: 'Violeta',
+  vermelho: 'Vermelho',
+}
+
+/** A cor que o backend daria a um cadastro novo: a próxima da paleta, em ordem. */
+export const proximaCor = (quantidadeExistente: number): Cor => {
+  return CORES[quantidadeExistente % CORES.length] ?? 'azul'
+}
+
 type ClassesDaCor = {
   fundo: string
   /** Cor do ícone por cima: branco, ou escuro onde o branco não passaria de 3:1 */

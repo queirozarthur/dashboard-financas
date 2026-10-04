@@ -4,14 +4,16 @@ import { userEvent } from '@testing-library/user-event'
 import type { FC } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { contaDeTeste } from '@/testes/fabricas'
+
 import type { Transacao } from './consts/esquemas'
 import { useAbrirLancamento } from './hooks/contextoDoLancamento'
 import { LancamentoProvider } from './LancamentoProvider'
 
 const CONTAS = [
-  { id: 1, nome: 'Corrente', tipo: 'corrente' },
-  { id: 2, nome: 'Carteira', tipo: 'dinheiro' },
-  { id: 4, nome: 'Nubank', tipo: 'cartao' },
+  contaDeTeste({ id: 1, nome: 'Corrente', tipo: 'corrente' }),
+  contaDeTeste({ id: 2, nome: 'Carteira', tipo: 'dinheiro' }),
+  contaDeTeste({ id: 4, nome: 'Nubank', tipo: 'cartao' }),
 ]
 const CATEGORIAS = [
   { id: 7, nome: 'Mercado', natureza: 'despesa', tipo: 'variavel' },

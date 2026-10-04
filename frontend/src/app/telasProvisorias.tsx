@@ -5,7 +5,7 @@ import { Grupo, IconeColorido, Linha, Tela } from '@/core/ui'
 import { useSessao } from '@/features/auth'
 
 // Provisórias: cada uma é trocada pela tela de verdade no seu passo
-// (T6c contas e categorias, T7 cartão, T8 recorrências e orçamentos).
+// (T7 cartão, T8 recorrências e orçamentos).
 
 export const TelaCartoes: FC = () => {
   return (
@@ -22,22 +22,22 @@ export const TelaMais: FC = () => {
       <Grupo titulo="Cadastros">
         <Linha
           icone={<IconeColorido Icone={Landmark} cor="azul" />}
-          para="/contas"
+          para="/mais/contas"
           rotulo="Contas"
         />
         <Linha
           icone={<IconeColorido Icone={Tag} cor="laranja" />}
-          para="/categorias"
+          para="/mais/categorias"
           rotulo="Categorias"
         />
         <Linha
           icone={<IconeColorido Icone={Repeat} cor="violeta" />}
-          para="/recorrencias"
+          para="/mais/recorrencias"
           rotulo="Recorrências"
         />
         <Linha
           icone={<IconeColorido Icone={Target} cor="verde" />}
-          para="/orcamentos"
+          para="/mais/orcamentos"
           rotulo="Orçamentos"
         />
       </Grupo>

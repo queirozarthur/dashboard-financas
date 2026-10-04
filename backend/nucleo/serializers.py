@@ -13,6 +13,16 @@ class DoUsuarioMixin:
         return self.context['request'].user
 
 
+def conta_tem_lancamentos(conta):
+    return (
+        conta.transacoes.exists()
+        or conta.transferencias_recebidas.exists()
+        or conta.compras.exists()
+        or conta.recorrencias.exists()
+        or conta.recorrencias_recebidas.exists()
+    )
+
+
 class ContaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
     saldo = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
 
@@ -31,12 +41,29 @@ class ContaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         def atual(campo):
             return dados.get(campo, getattr(self.instance, campo, None))
 
+        tipo = atual('tipo')
         dias = {campo: atual(campo) for campo in ['dia_fechamento', 'dia_vencimento']}
         # Mesma regra da CheckConstraint; checar aqui devolve 400 com mensagem, não 500
-        if atual('tipo') == Conta.Tipo.CARTAO:
+        if tipo == Conta.Tipo.CARTAO:
             erros = {campo: 'Cartão exige este dia.' for campo, dia in dias.items() if dia is None}
+            # A dívida do cartão vem das faturas; um saldo inicial seria dívida que nenhuma
+            # fatura consegue pagar
+            saldo_inicial = atual('saldo_inicial')
+            if saldo_inicial is not None and saldo_inicial != 0:
+                erros['saldo_inicial'] = (
+                    'Cartão começa com saldo zero: lance o que você já deve como compras.'
+                )
         else:
             erros = {campo: 'Só cartão tem este dia.' for campo, dia in dias.items() if dia is not None}
+
+        # Entre corrente, dinheiro e investimento tanto faz; virar cartão (ou deixar de ser)
+        # quebraria as regras dos lançamentos que a conta já tem
+        mudou_de_lado = self.instance and (tipo == Conta.Tipo.CARTAO) != self.instance.e_cartao
+        if mudou_de_lado and conta_tem_lancamentos(self.instance):
+            erros['tipo'] = (
+                'Não é possível transformar em cartão (ou deixar de ser cartão) '
+                'uma conta que já tem lançamentos.'
+            )
         if erros:
             raise serializers.ValidationError(erros)
         return dados

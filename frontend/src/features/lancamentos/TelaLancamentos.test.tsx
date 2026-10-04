@@ -4,6 +4,8 @@ import { userEvent } from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { contaDeTeste } from '@/testes/fabricas'
+
 import type { Transacao } from './consts/esquemas'
 import { LancamentoProvider } from './LancamentoProvider'
 import { TelaLancamentos } from './TelaLancamentos'
@@ -65,8 +67,8 @@ const SETEMBRO = [
 ]
 
 const CONTAS = [
-  { id: 1, nome: 'Corrente', tipo: 'corrente' },
-  { id: 2, nome: 'Investimentos', tipo: 'investimento' },
+  contaDeTeste({ id: 1, nome: 'Corrente', tipo: 'corrente' }),
+  contaDeTeste({ id: 2, nome: 'Investimentos', tipo: 'investimento' }),
 ]
 const CATEGORIAS = [{ id: 7, nome: 'Mercado', natureza: 'despesa', tipo: 'variavel' }]
 

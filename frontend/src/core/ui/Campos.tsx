@@ -1,5 +1,12 @@
 import { ChevronsUpDown } from 'lucide-react'
-import { useId, type ChangeEvent, type ComponentProps, type FC, type ReactNode } from 'react'
+import {
+  useId,
+  useState,
+  type ChangeEvent,
+  type ComponentProps,
+  type FC,
+  type ReactNode,
+} from 'react'
 
 import { cn, digitosParaDecimal, formatarDinheiro } from '@/core/utils'
 
@@ -13,31 +20,50 @@ type ComErro = {
   erro?: string
 }
 
-// Liga o controle à mensagem de erro: o leitor de tela lê a mensagem junto com o campo
-const useErroDoCampo = (erro: string | undefined) => {
-  const id = useId()
+/**
+ * Liga rótulo, campo e mensagem de erro por id: tocar no rótulo foca o campo, e o leitor
+ * de tela lê a mensagem de erro junto com ele.
+ */
+const useLigacoesDoCampo = (erro: string | undefined, idInformado: string | undefined) => {
+  const idGerado = useId()
+  const idDoErro = useId()
+  const idDoCampo = idInformado ?? idGerado
   return {
-    idDoErro: id,
-    atributos: erro ? { 'aria-invalid': true, 'aria-describedby': id } : {},
+    idDoCampo,
+    idDoErro,
+    atributos: {
+      id: idDoCampo,
+      ...(erro ? { 'aria-invalid': true, 'aria-describedby': idDoErro } : {}),
+    },
   }
 }
 
 type LinhaDeFormularioProps = ComErro & {
   rotulo: string
+  idDoCampo: string
   idDoErro: string
   children: ReactNode
 }
 
-const LinhaDeFormulario: FC<LinhaDeFormularioProps> = ({ rotulo, erro, idDoErro, children }) => {
+const LinhaDeFormulario: FC<LinhaDeFormularioProps> = ({
+  rotulo,
+  erro,
+  idDoCampo,
+  idDoErro,
+  children,
+}) => {
   return (
     <li className="group/linha">
-      {/* O <label> envolve o controle: tocar no rótulo foca o campo */}
-      <label className="flex items-center pl-4 focus-within:bg-marca-suave/40">
-        <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 border-separador pr-4 group-not-first/linha:border-t">
-          <span className={cn('w-28 shrink-0', erro && 'text-despesa')}>{rotulo}</span>
+      <div className="flex items-center pl-4 focus-within:bg-marca-suave/40">
+        <div className="flex min-h-11 min-w-0 flex-1 items-center gap-3 border-separador pr-4 group-not-first/linha:border-t">
+          {/* O <label> envolve só o texto e aponta para o campo pelo id: assim nada mais
+              na linha (como o botão ±) é confundido com o campo que ele nomeia */}
+          <label className={cn('w-28 shrink-0', erro && 'text-despesa')} htmlFor={idDoCampo}>
+            {rotulo}
+          </label>
           {children}
-        </span>
-      </label>
+        </div>
+      </div>
       {erro ? (
         <p className="px-4 pb-2 text-nota text-despesa" id={idDoErro}>
           {erro}
@@ -52,10 +78,10 @@ type CampoProps = ComponentProps<'input'> &
     rotulo: string
   }
 
-export const Campo: FC<CampoProps> = ({ rotulo, erro, className, ...campo }) => {
-  const { idDoErro, atributos } = useErroDoCampo(erro)
+export const Campo: FC<CampoProps> = ({ rotulo, erro, className, id, ...campo }) => {
+  const { idDoCampo, idDoErro, atributos } = useLigacoesDoCampo(erro, id)
   return (
-    <LinhaDeFormulario erro={erro} idDoErro={idDoErro} rotulo={rotulo}>
+    <LinhaDeFormulario erro={erro} idDoCampo={idDoCampo} idDoErro={idDoErro} rotulo={rotulo}>
       <input {...campo} {...atributos} className={cn(CLASSES_DO_CONTROLE, className)} />
     </LinhaDeFormulario>
   )
@@ -64,9 +90,11 @@ export const Campo: FC<CampoProps> = ({ rotulo, erro, className, ...campo }) => 
 type CampoValorProps = Omit<ComponentProps<'input'>, 'value' | 'onChange'> &
   ComErro & {
     rotulo: string
-    /** Texto decimal como a API usa ("12.34"), ou "" quando vazio */
+    /** Texto decimal como a API usa ("12.34" ou "-12.34"), ou "" quando vazio */
     valor: string
     aoMudar: (valor: string) => void
+    /** Mostra o botão ±: o teclado numérico do iPhone não tem a tecla de menos */
+    permiteNegativo?: boolean
   }
 
 /** Valor em R$ digitado a partir dos centavos: 1, 2, 3, 4 → R$ 12,34. Nunca vira float. */
@@ -74,17 +102,46 @@ export const CampoValor: FC<CampoValorProps> = ({
   rotulo,
   valor,
   aoMudar,
+  permiteNegativo = false,
   erro,
   className,
+  id,
   ...campo
 }) => {
-  const { idDoErro, atributos } = useErroDoCampo(erro)
+  const { idDoCampo, idDoErro, atributos } = useLigacoesDoCampo(erro, id)
+  // Sem dígitos ainda não há valor para levar o sinal: ele fica guardado aqui até a digitação
+  const [sinalSemValor, setSinalSemValor] = useState(false)
+  const negativo = valor ? valor.startsWith('-') : sinalSemValor
+
   const mudar = (evento: ChangeEvent<HTMLInputElement>) => {
-    aoMudar(digitosParaDecimal(evento.target.value))
+    const decimal = digitosParaDecimal(evento.target.value)
+    aoMudar(decimal && negativo ? `-${decimal}` : decimal)
+  }
+
+  const inverterSinal = () => {
+    if (!valor) {
+      setSinalSemValor(!sinalSemValor)
+      return
+    }
+    aoMudar(negativo ? valor.slice(1) : `-${valor}`)
   }
 
   return (
-    <LinhaDeFormulario erro={erro} idDoErro={idDoErro} rotulo={rotulo}>
+    <LinhaDeFormulario erro={erro} idDoCampo={idDoCampo} idDoErro={idDoErro} rotulo={rotulo}>
+      {permiteNegativo ? (
+        <button
+          aria-label="Valor negativo"
+          aria-pressed={negativo}
+          className={cn(
+            'flex h-7 min-w-9 shrink-0 items-center justify-center rounded-md text-subtitulo font-semibold outline-none focus-visible:outline-2 focus-visible:outline-marca',
+            negativo ? 'bg-despesa text-sobre-alerta' : 'bg-fundo text-conteudo-secundario',
+          )}
+          onClick={inverterSinal}
+          type="button"
+        >
+          ±
+        </button>
+      ) : null}
       <input
         {...campo}
         {...atributos}
@@ -93,7 +150,7 @@ export const CampoValor: FC<CampoValorProps> = ({
         // numeric: no celular abre só o teclado de números
         inputMode="numeric"
         onChange={mudar}
-        placeholder={formatarDinheiro('0')}
+        placeholder={formatarDinheiro(negativo ? '-0' : '0')}
         value={valor ? formatarDinheiro(valor) : ''}
       />
     </LinhaDeFormulario>
@@ -106,10 +163,10 @@ type CampoDataProps = ComponentProps<'input'> &
   }
 
 /** Campo de data nativo: no iPhone abre o calendário do próprio iOS. Valor no formato AAAA-MM-DD. */
-export const CampoData: FC<CampoDataProps> = ({ rotulo, erro, className, ...campo }) => {
-  const { idDoErro, atributos } = useErroDoCampo(erro)
+export const CampoData: FC<CampoDataProps> = ({ rotulo, erro, className, id, ...campo }) => {
+  const { idDoCampo, idDoErro, atributos } = useLigacoesDoCampo(erro, id)
   return (
-    <LinhaDeFormulario erro={erro} idDoErro={idDoErro} rotulo={rotulo}>
+    <LinhaDeFormulario erro={erro} idDoCampo={idDoCampo} idDoErro={idDoErro} rotulo={rotulo}>
       <input
         {...campo}
         {...atributos}
@@ -140,11 +197,12 @@ export const CampoSelecao: FC<CampoSelecaoProps> = ({
   vazio = 'Escolher',
   erro,
   className,
+  id,
   ...campo
 }) => {
-  const { idDoErro, atributos } = useErroDoCampo(erro)
+  const { idDoCampo, idDoErro, atributos } = useLigacoesDoCampo(erro, id)
   return (
-    <LinhaDeFormulario erro={erro} idDoErro={idDoErro} rotulo={rotulo}>
+    <LinhaDeFormulario erro={erro} idDoCampo={idDoCampo} idDoErro={idDoErro} rotulo={rotulo}>
       <span className="relative flex min-w-0 flex-1 items-center">
         <select
           {...campo}

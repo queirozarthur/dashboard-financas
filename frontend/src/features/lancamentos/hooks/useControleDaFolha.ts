@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import { ErroDaApi } from '@/core/api'
+import { errosDaFalha as errosDaFalhaGenerico } from '@/core/api'
 
 import type { Transacao } from '../consts/esquemas'
-import { errosDaApi } from '../erros'
+import { CAMPOS_DO_LANCAMENTO } from '../erros'
 import {
   dataDeHoje,
   formularioDaTransacao,
@@ -20,10 +20,8 @@ import {
 } from '../formulario'
 import { useApagarLancamento, useSalvarLancamento } from './useMutacoesDeLancamento'
 
-const MENSAGEM_DE_CONEXAO = 'Não foi possível falar com o servidor. Confira se ele está ligado.'
-
 const errosDaFalha = (falha: unknown): ErrosDoFormulario => {
-  return falha instanceof ErroDaApi ? errosDaApi(falha.dados) : { geral: MENSAGEM_DE_CONEXAO }
+  return errosDaFalhaGenerico(falha, CAMPOS_DO_LANCAMENTO)
 }
 
 /** Estado da folha de lançamento: aberta ou não, o que está sendo editado, campos e erros. */

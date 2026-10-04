@@ -32,28 +32,5 @@ export const esquemaPaginaDeTransacoes = z.object({
   results: z.array(esquemaTransacao),
 })
 
-export const esquemaContas = z.array(
-  z.object({
-    id: z.number(),
-    nome: z.string(),
-    tipo: z.enum(['corrente', 'dinheiro', 'investimento', 'cartao']),
-    cor: esquemaCor,
-    icone: esquemaIcone,
-  }),
-)
-
-export const esquemaCategorias = z.array(
-  z.object({
-    id: z.number(),
-    nome: z.string(),
-    natureza: z.enum(['receita', 'despesa']),
-    tipo: z.enum(['fixo', 'variavel']),
-    cor: esquemaCor,
-    icone: esquemaIcone,
-  }),
-)
-
 export type Transacao = z.infer<typeof esquemaTransacao>
 export type PaginaDeTransacoes = z.infer<typeof esquemaPaginaDeTransacoes>
-export type Conta = z.infer<typeof esquemaContas>[number]
-export type Categoria = z.infer<typeof esquemaCategorias>[number]

@@ -1,8 +1,12 @@
 import { useState, type FC } from 'react'
 
-import { Botao } from '@/core/ui'
+import { Botao } from './Botao'
 
-type ZonaDeExclusaoProps = {
+type ConfirmacaoDeExclusaoProps = {
+  /** Texto do botão, ex.: "Apagar lançamento" */
+  rotulo: string
+  /** Pergunta da confirmação, ex.: "Apagar este lançamento?" */
+  pergunta: string
   apagando: boolean
   aoApagar: () => void
 }
@@ -11,7 +15,12 @@ type ZonaDeExclusaoProps = {
  * Apagar pelo computador: botão no fim da folha, com confirmação no mesmo lugar.
  * No celular fica escondida (md:block): lá se apaga arrastando a linha da lista.
  */
-export const ZonaDeExclusao: FC<ZonaDeExclusaoProps> = ({ apagando, aoApagar }) => {
+export const ConfirmacaoDeExclusao: FC<ConfirmacaoDeExclusaoProps> = ({
+  rotulo,
+  pergunta,
+  apagando,
+  aoApagar,
+}) => {
   const [confirmando, setConfirmando] = useState(false)
 
   if (!confirmando) {
@@ -24,7 +33,7 @@ export const ZonaDeExclusao: FC<ZonaDeExclusaoProps> = ({ apagando, aoApagar }) 
             setConfirmando(true)
           }}
         >
-          Apagar lançamento
+          {rotulo}
         </Botao>
       </div>
     )
@@ -32,7 +41,7 @@ export const ZonaDeExclusao: FC<ZonaDeExclusaoProps> = ({ apagando, aoApagar }) 
 
   return (
     <div className="mt-8 hidden rounded-xl bg-superficie p-4 text-center md:block" role="group">
-      <p className="font-semibold">Apagar este lançamento?</p>
+      <p className="font-semibold">{pergunta}</p>
       <p className="mt-1 text-subtitulo text-conteudo-secundario">Não dá para desfazer.</p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Botao

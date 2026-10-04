@@ -6,6 +6,8 @@ import { CLASSES_DA_COR, cn, type Cor, type NomeDoIcone } from '@/core/utils'
 import { ICONES } from './icones'
 
 const TAMANHOS = {
+  // Topo das folhas de cadastro: a prévia de como a conta ou categoria vai aparecer
+  grande: { caixa: 'size-16 rounded-2xl', icone: 'size-8' },
   // Linhas de lista, como os ícones do Ajustes do iPhone
   medio: { caixa: 'size-8 rounded-lg', icone: 'size-4.5' },
   // Linhas mais densas (categorias dentro de um gráfico)

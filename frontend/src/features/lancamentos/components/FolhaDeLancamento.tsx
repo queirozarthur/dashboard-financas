@@ -1,21 +1,20 @@
 import { useId, type FC, type FormEvent } from 'react'
 
+import { useCategorias, useContas, type Categoria, type Conta } from '@/core/api'
 import {
   Campo,
   CampoData,
   CampoSelecao,
   CampoValor,
+  ConfirmacaoDeExclusao,
   ControleSegmentado,
   Folha,
   Grupo,
   type OpcaoDeSelecao,
 } from '@/core/ui'
 
-import type { Categoria, Conta } from '../consts/esquemas'
 import type { ControleDaFolha } from '../hooks/useControleDaFolha'
-import { useCategorias, useContas } from '../hooks/useCadastros'
 import { DetalhesSomenteLeitura } from './DetalhesSomenteLeitura'
-import { ZonaDeExclusao } from './ZonaDeExclusao'
 
 const TIPOS = [
   { valor: 'receita', rotulo: 'Receita' },
@@ -161,7 +160,12 @@ export const FolhaDeLancamento: FC<FolhaDeLancamentoProps> = ({ controle }) => {
             )}
           </Grupo>
           {editando ? (
-            <ZonaDeExclusao apagando={controle.apagando} aoApagar={controle.apagar} />
+            <ConfirmacaoDeExclusao
+              apagando={controle.apagando}
+              aoApagar={controle.apagar}
+              pergunta="Apagar este lançamento?"
+              rotulo="Apagar lançamento"
+            />
           ) : null}
         </form>
       )}

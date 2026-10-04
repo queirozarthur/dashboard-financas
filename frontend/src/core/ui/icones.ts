@@ -30,6 +30,36 @@ import {
 
 import type { NomeDoIcone } from '@/core/utils'
 
+/** Nomes legíveis, para leitores de tela e para o seletor de ícone. */
+export const ROTULOS_DOS_ICONES: Record<NomeDoIcone, string> = {
+  casa: 'Casa',
+  carrinho: 'Carrinho',
+  refeicao: 'Refeição',
+  carro: 'Carro',
+  onibus: 'Ônibus',
+  saude: 'Saúde',
+  academia: 'Academia',
+  educacao: 'Educação',
+  lazer: 'Lazer',
+  viagem: 'Viagem',
+  roupa: 'Roupa',
+  presente: 'Presente',
+  pet: 'Pet',
+  celular: 'Celular',
+  internet: 'Internet',
+  energia: 'Energia',
+  agua: 'Água',
+  trabalho: 'Trabalho',
+  dinheiro: 'Dinheiro',
+  cofrinho: 'Cofrinho',
+  investimento: 'Investimento',
+  banco: 'Banco',
+  carteira: 'Carteira',
+  cartao: 'Cartão',
+  recibo: 'Recibo',
+  etiqueta: 'Etiqueta',
+}
+
 /** Liga cada nome de ícone guardado no backend ao desenho do Lucide. */
 export const ICONES: Record<NomeDoIcone, LucideIcon> = {
   casa: House,
