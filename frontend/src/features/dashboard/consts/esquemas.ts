@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { esquemaCor, esquemaIcone } from '@/core/utils'
+
 // Dinheiro chega como texto com duas casas ("1500.00", "-30.00"), nunca como número
 const dinheiro = z.string().regex(/^-?\d+\.\d{2}$/)
 
@@ -23,6 +25,8 @@ export const esquemaDashboard = z.object({
       categoria_id: z.number(),
       categoria: z.string(),
       tipo: z.enum(['fixo', 'variavel']),
+      cor: esquemaCor,
+      icone: esquemaIcone,
       total: dinheiro,
       percentual: z.string(),
     }),
@@ -38,7 +42,12 @@ export const esquemaDashboard = z.object({
   previsto: z.object({ receitas: dinheiro, despesas: dinheiro, resultado_projetado: dinheiro }),
   orcamentos: z.object({
     categorias: z.array(
-      linhaDeOrcamento.extend({ categoria_id: z.number(), categoria: z.string() }),
+      linhaDeOrcamento.extend({
+        categoria_id: z.number(),
+        categoria: z.string(),
+        cor: esquemaCor,
+        icone: esquemaIcone,
+      }),
     ),
     total: linhaDeOrcamento,
   }),

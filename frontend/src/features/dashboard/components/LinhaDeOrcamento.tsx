@@ -1,6 +1,7 @@
 import { CircleAlert, TriangleAlert } from 'lucide-react'
 import type { FC } from 'react'
 
+import { IconeDoCadastro } from '@/core/ui'
 import { cn, formatarDinheiro } from '@/core/utils'
 
 import { situacaoDoOrcamento, temValor, type SituacaoDoOrcamento } from '../comparacao'
@@ -48,8 +49,12 @@ export const LinhaDeOrcamento: FC<LinhaDeOrcamentoProps> = ({ dados }) => {
   const situacao = situacaoDoOrcamento(dados.restante, dados.percentual)
 
   return (
-    <li className="group/linha pl-4">
-      <div className="border-separador py-3 pr-4 group-not-first/linha:border-t">
+    // A barra usa as cores de situação, não a da categoria: aqui a cor diz o estado do limite
+    <li className="group/linha flex items-start gap-3 pl-4">
+      <span className="pt-3">
+        <IconeDoCadastro cor={dados.cor} icone={dados.icone} />
+      </span>
+      <div className="min-w-0 flex-1 border-separador py-3 pr-4 group-not-first/linha:border-t">
         <div className="flex items-baseline justify-between gap-3">
           <span className="truncate">{dados.categoria}</span>
           <Restante restante={dados.restante} situacao={situacao} />

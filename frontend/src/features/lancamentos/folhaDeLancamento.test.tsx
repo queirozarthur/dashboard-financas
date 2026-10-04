@@ -30,6 +30,8 @@ const FEIRA: Transacao = {
   conta_destino_nome: null,
   categoria: 7,
   categoria_nome: 'Mercado',
+  categoria_cor: 'laranja',
+  categoria_icone: 'carrinho',
   compra: null,
   numero_parcela: null,
   fatura_paga: null,

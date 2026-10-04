@@ -1,8 +1,7 @@
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, type LucideIcon } from 'lucide-react'
+import { ArrowLeftRight } from 'lucide-react'
 import type { FC } from 'react'
 
-import { Linha, Valor } from '@/core/ui'
-import { cn } from '@/core/utils'
+import { IconeColorido, IconeDoCadastro, Linha, Valor } from '@/core/ui'
 
 import { detalheDoLancamento, tituloDoLancamento } from '../apresentacao'
 import type { Transacao } from '../consts/esquemas'
@@ -10,10 +9,16 @@ import { motivoSomenteLeitura } from '../formulario'
 import { useAbrirLancamento } from '../hooks/contextoDoLancamento'
 import { useApagarLancamento } from '../hooks/useMutacoesDeLancamento'
 
-const ICONES: Record<Transacao['tipo'], { Icone: LucideIcon; cor: string }> = {
-  receita: { Icone: ArrowDownLeft, cor: 'text-receita' },
-  despesa: { Icone: ArrowUpRight, cor: 'text-conteudo-secundario' },
-  transferencia: { Icone: ArrowLeftRight, cor: 'text-marca' },
+type IconeDoLancamentoProps = {
+  transacao: Transacao
+}
+
+// Com categoria: o ícone e a cor escolhidos nela. Sem (transferência): setas na cor do app
+const IconeDoLancamento: FC<IconeDoLancamentoProps> = ({ transacao }) => {
+  if (transacao.categoria_cor && transacao.categoria_icone) {
+    return <IconeDoCadastro cor={transacao.categoria_cor} icone={transacao.categoria_icone} />
+  }
+  return <IconeColorido Icone={ArrowLeftRight} cor="marca" />
 }
 
 const TOM = { receita: 'receita', despesa: 'despesa', transferencia: 'neutro' } as const
@@ -23,7 +28,6 @@ type LinhaDeLancamentoProps = {
 }
 
 export const LinhaDeLancamento: FC<LinhaDeLancamentoProps> = ({ transacao }) => {
-  const { Icone, cor } = ICONES[transacao.tipo]
   const { abrirEdicao } = useAbrirLancamento()
   const exclusao = useApagarLancamento()
   // Parcela e pagamento de fatura não se apagam por aqui: a linha não revela o "Apagar"
@@ -45,12 +49,7 @@ export const LinhaDeLancamento: FC<LinhaDeLancamentoProps> = ({ transacao }) => 
         abrirEdicao(transacao)
       }}
       detalhe={detalheDoLancamento(transacao)}
-      icone={
-        // Quadradinho arredondado atrás do ícone, como os ícones das listas do iOS
-        <span className="flex size-8 items-center justify-center rounded-lg bg-fundo">
-          <Icone aria-hidden="true" className={cn('size-4', cor)} strokeWidth={2} />
-        </span>
-      }
+      icone={<IconeDoLancamento transacao={transacao} />}
       rotulo={tituloDoLancamento(transacao)}
       valor={<Valor tom={TOM[transacao.tipo]} valor={transacao.valor} />}
     />

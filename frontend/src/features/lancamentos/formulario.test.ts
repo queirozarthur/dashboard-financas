@@ -36,6 +36,8 @@ const transacao: Transacao = {
   conta_destino_nome: 'Investimentos',
   categoria: null,
   categoria_nome: null,
+  categoria_cor: null,
+  categoria_icone: null,
   compra: null,
   numero_parcela: null,
   fatura_paga: null,

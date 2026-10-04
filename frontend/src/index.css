@@ -129,6 +129,21 @@
      Texto nunca usa estas cores: elas vão só nas barras e nas amostras da legenda. */
   --color-serie-despesa: #2a78d6;
   --color-serie-variavel: #eb6834;
+
+  /* Paleta das categorias e contas: as 8 cores validadas da skill dataviz, na ordem do backend
+     (nucleo/aparencia.py). Ícone branco por cima, menos em turquesa, amarelo e rosa, onde o
+     branco fica abaixo de 3:1 e o ícone vai escuro (ver CLASSES_DA_COR). */
+  --color-paleta-azul: #2a78d6;
+  --color-paleta-laranja: #eb6834;
+  --color-paleta-turquesa: #1baf7a;
+  --color-paleta-amarelo: #eda100;
+  --color-paleta-rosa: #e87ba4;
+  --color-paleta-verde: #008300;
+  --color-paleta-violeta: #4a3aa7;
+  --color-paleta-vermelho: #e34948;
+
+  /* Fim do degradê do cartão do resultado: texto branco 7,6:1 aqui, 5,3:1 no começo */
+  --color-marca-escura: #0a5d61;
 }
 
 /* Margens seguras do iPhone (notch, ilha dinâmica, barra de gestos); exigem viewport-fit=cover */

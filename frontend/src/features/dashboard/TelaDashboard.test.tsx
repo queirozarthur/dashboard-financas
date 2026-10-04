@@ -14,11 +14,21 @@ const OUTUBRO: Dashboard = {
   resultado: '4049.60',
   saldo_total: '15320.10',
   gastos_por_categoria: [
-    { categoria_id: 3, categoria: 'Moradia', tipo: 'fixo', total: '1800.00', percentual: '83.7' },
+    {
+      categoria_id: 3,
+      categoria: 'Moradia',
+      tipo: 'fixo',
+      cor: 'azul',
+      icone: 'casa',
+      total: '1800.00',
+      percentual: '83.7',
+    },
     {
       categoria_id: 2,
       categoria: 'Mercado',
       tipo: 'variavel',
+      cor: 'laranja',
+      icone: 'carrinho',
       total: '350.40',
       percentual: '16.3',
     },
@@ -32,6 +42,8 @@ const OUTUBRO: Dashboard = {
       {
         categoria_id: 1,
         categoria: 'Lazer',
+        cor: 'rosa',
+        icone: 'lazer',
         limite: '450.00',
         gasto: '480.00',
         previsto: '0.00',
@@ -41,6 +53,8 @@ const OUTUBRO: Dashboard = {
       {
         categoria_id: 2,
         categoria: 'Mercado',
+        cor: 'laranja',
+        icone: 'carrinho',
         limite: '900.00',
         gasto: '620.00',
         previsto: '0.00',
@@ -205,6 +219,23 @@ describe('TelaDashboard', () => {
     const bloco = await screen.findByRole('region', { name: 'Despesas fixas e variáveis' })
     expect(within(bloco).getByText('Fixo').nextElementSibling).toHaveTextContent('R$ 1.800,00')
     expect(within(bloco).getByText('Variável').nextElementSibling).toHaveTextContent('R$ 350,40')
+  })
+
+  it('a barra de cada categoria tem a cor dela', async () => {
+    servir()
+    abrir()
+    const titulo = await screen.findByRole('heading', { name: 'Gastos por categoria' })
+    const moradia = within(titulo.parentElement!).getByText('Moradia').closest('li')
+    expect(moradia?.querySelector('.bg-paleta-azul')).not.toBeNull()
+  })
+
+  it('o resultado fica em branco sobre o degradê, mesmo negativo', async () => {
+    servir({ dashboard: { ...OUTUBRO, resultado: '-150.00' } })
+    abrir()
+    const destaque = await screen.findByRole('region', { name: 'Resultado do mês' })
+    const valor = within(destaque).getByText('−R$ 150,00')
+    expect(valor).toHaveClass('text-sobre-marca')
+    expect(valor).not.toHaveClass('text-despesa')
   })
 
   it('lista os gastos por categoria com valor e percentual', async () => {

@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 
-import { Grupo } from '@/core/ui'
-import { formatarDinheiro } from '@/core/utils'
+import { Grupo, IconeDoCadastro } from '@/core/ui'
+import { CLASSES_DA_COR, cn, formatarDinheiro } from '@/core/utils'
 
 import { temValor } from '../comparacao'
 import type { Dashboard } from '../consts/esquemas'
@@ -55,8 +55,9 @@ type CategoriaProps = {
 
 const LinhaDaCategoria: FC<CategoriaProps> = ({ dados }) => {
   return (
-    <li className="group/linha pl-4">
-      <div className="border-separador py-2.5 pr-4 group-not-first/linha:border-t">
+    <li className="group/linha flex items-center gap-3 pl-4">
+      <IconeDoCadastro cor={dados.cor} icone={dados.icone} />
+      <div className="min-w-0 flex-1 border-separador py-2.5 pr-4 group-not-first/linha:border-t">
         <div className="flex items-baseline justify-between gap-3">
           <span className="truncate">{dados.categoria}</span>
           <span className="shrink-0 text-conteudo-secundario tabular-nums">
@@ -66,11 +67,14 @@ const LinhaDaCategoria: FC<CategoriaProps> = ({ dados }) => {
             </span>
           </span>
         </div>
-        {/* Uma série só: sem legenda, o título do bloco já diz o que é. Ponta arredondada,
-            base reta; a largura é a fatia da categoria no total de despesas do mês */}
+        {/* A cor acompanha a categoria (a mesma do ícone). Ponta arredondada, base reta;
+            a largura é a fatia da categoria no total de despesas do mês */}
         <div aria-hidden="true" className="mt-1.5 h-1.5">
           <div
-            className="h-full rounded-r-sm bg-serie-despesa transition-[width] duration-500 ease-out motion-reduce:transition-none"
+            className={cn(
+              'h-full rounded-r-sm transition-[width] duration-500 ease-out motion-reduce:transition-none',
+              CLASSES_DA_COR[dados.cor].fundo,
+            )}
             style={{ width: `${dados.percentual}%` }}
           />
         </div>

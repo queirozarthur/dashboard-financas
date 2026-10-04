@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { esquemaCor, esquemaIcone } from '@/core/utils'
+
 const dinheiro = z.string().regex(/^-?\d+\.\d{2}$/)
 
 export const esquemaTransacao = z.object({
@@ -14,6 +16,8 @@ export const esquemaTransacao = z.object({
   conta_destino_nome: z.string().nullable(),
   categoria: z.number().nullable(),
   categoria_nome: z.string().nullable(),
+  categoria_cor: esquemaCor.nullable(),
+  categoria_icone: esquemaIcone.nullable(),
   compra: z.number().nullable(),
   numero_parcela: z.number().nullable(),
   fatura_paga: z.string().nullable(),
@@ -33,6 +37,8 @@ export const esquemaContas = z.array(
     id: z.number(),
     nome: z.string(),
     tipo: z.enum(['corrente', 'dinheiro', 'investimento', 'cartao']),
+    cor: esquemaCor,
+    icone: esquemaIcone,
   }),
 )
 
@@ -42,6 +48,8 @@ export const esquemaCategorias = z.array(
     nome: z.string(),
     natureza: z.enum(['receita', 'despesa']),
     tipo: z.enum(['fixo', 'variavel']),
+    cor: esquemaCor,
+    icone: esquemaIcone,
   }),
 )
 
