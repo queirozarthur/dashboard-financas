@@ -1,6 +1,7 @@
+from django.utils import timezone
 from rest_framework import serializers
 
-from .cartao import registrar_compra
+from .cartao import ErroDeFatura, registrar_compra
 from .models import Categoria, Compra, Conta, Transacao
 
 
@@ -90,10 +91,10 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
             'categoria', 'categoria_nome',
-            'compra', 'numero_parcela',
+            'compra', 'numero_parcela', 'fatura_paga',
         ]
-        # Parcelas nascem só por /api/compras/; aqui o cliente apenas enxerga o vínculo
-        read_only_fields = ['compra', 'numero_parcela']
+        # Parcelas e pagamentos de fatura têm rotas próprias; aqui o cliente só enxerga o vínculo
+        read_only_fields = ['compra', 'numero_parcela', 'fatura_paga']
 
     def get_fields(self):
         campos = super().get_fields()
@@ -117,6 +118,11 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
                 'Esta transação é parcela de uma compra no cartão. '
                 'Para corrigir, apague a compra e lance de novo.'
             )
+        if self.instance and self.instance.fatura_paga:
+            raise serializers.ValidationError(
+                'Esta transação é o pagamento de uma fatura. '
+                'Para corrigir, cancele o pagamento na rota da fatura e pague de novo.'
+            )
 
         # Num PATCH só chegam os campos alterados; o resto vem do objeto salvo
         def atual(campo):
@@ -135,6 +141,14 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
                 erros['conta_destino'] = 'A conta de destino precisa ser diferente da conta de origem.'
             if categoria is not None:
                 erros['categoria'] = 'Transferência não tem categoria.'
+            # No cartão só entram compras e o pagamento da fatura, que tem rota própria
+            if conta_destino is not None and conta_destino.e_cartao:
+                erros['conta_destino'] = (
+                    'Para pagar o cartão, use a rota de pagamento da fatura: '
+                    '/api/cartoes/<id>/faturas/<AAAA-MM>/pagar/.'
+                )
+            if conta is not None and conta.e_cartao:
+                erros['conta'] = 'Não é possível transferir saindo de um cartão de crédito.'
         else:
             if categoria is None:
                 erros['categoria'] = 'Receita e despesa exigem categoria.'
@@ -155,15 +169,68 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
 
 
 class ParcelaSerializer(serializers.ModelSerializer):
+    """Espera parcelas anotadas por cartao.com_data_de_pagamento."""
+
     numero = serializers.SerializerMethodField()
     vencimento = serializers.DateField(source='data')
+    situacao = serializers.SerializerMethodField()
+    data_pagamento = serializers.DateField()
 
     class Meta:
         model = Transacao
-        fields = ['id', 'numero', 'valor', 'vencimento']
+        fields = ['id', 'numero', 'valor', 'vencimento', 'situacao', 'data_pagamento']
 
     def get_numero(self, parcela):
         return f'{parcela.numero_parcela}/{parcela.compra.parcelas}'
+
+    def get_situacao(self, parcela):
+        return 'paga' if parcela.data_pagamento else 'pendente'
+
+
+class ParcelaDaFaturaSerializer(ParcelaSerializer):
+    # Dentro de uma fatura, situação e data de pagamento são da fatura, não de cada parcela
+    situacao = None
+    data_pagamento = None
+    descricao = serializers.CharField(source='compra.descricao')
+    categoria_nome = serializers.CharField(source='categoria.nome')
+    data_compra = serializers.DateField(source='compra.data_compra')
+
+    class Meta(ParcelaSerializer.Meta):
+        fields = ['id', 'compra', 'descricao', 'categoria_nome', 'data_compra', 'numero', 'valor']
+
+
+class PagamentoDaFaturaSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    data = serializers.DateField()
+    conta = serializers.IntegerField(source='conta_id')
+    conta_nome = serializers.CharField(source='conta.nome')
+    valor = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class FaturaSerializer(serializers.Serializer):
+    cartao = serializers.IntegerField(source='cartao.id')
+    cartao_nome = serializers.CharField(source='cartao.nome')
+    mes = serializers.CharField()
+    fechamento = serializers.DateField()
+    vencimento = serializers.DateField()
+    fechada = serializers.SerializerMethodField()
+    total = serializers.DecimalField(max_digits=14, decimal_places=2)
+    situacao = serializers.CharField()
+    pagamento = PagamentoDaFaturaSerializer(allow_null=True)
+    parcelas = ParcelaDaFaturaSerializer(many=True)
+
+    def get_fechada(self, fatura):
+        return timezone.localdate() >= fatura.fechamento
+
+
+class PagarFaturaSerializer(DoUsuarioMixin, serializers.Serializer):
+    conta = serializers.PrimaryKeyRelatedField(queryset=Conta.objects.none())
+    data = serializers.DateField()
+
+    def get_fields(self):
+        campos = super().get_fields()
+        campos['conta'].queryset = Conta.objects.filter(usuario=self.usuario)
+        return campos
 
 
 class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
@@ -211,4 +278,8 @@ class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
 
     def create(self, dados):
         # As parcelas nascem junto com a compra, numa transação só do banco
-        return registrar_compra(**dados)
+        try:
+            return registrar_compra(**dados)
+        except ErroDeFatura as erro:
+            # Lista, como nos outros erros: fora do validate() o DRF não normaliza o formato
+            raise serializers.ValidationError({'data_compra': [str(erro)]}) from None

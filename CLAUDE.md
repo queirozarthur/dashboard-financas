@@ -94,6 +94,9 @@ Validações da `Transacao` (no serializer):
 - Compra antes do dia de fechamento entra na fatura que fecha naquele mês; no dia do fechamento ou depois, na seguinte. O vencimento cai no mesmo mês do fechamento se `dia_vencimento > dia_fechamento`, senão no mês seguinte.
 - **Fatura é calculada, não armazenada:** parcelas do cartão com a mesma data de vencimento.
 - **Pagamento = transferência** da conta para o cartão (não é despesa). Só pagamento total: valor igual ao total da fatura, fatura já fechada, uma vez só. Parcelas de fatura paga não podem ser apagadas.
+- Rotas da fatura: `GET /api/cartoes/<id>/faturas/<AAAA-MM>/` (fatura que vence no mês), `POST .../pagar/` com `{conta, data}` (o valor vem do total, nunca do cliente) e `DELETE .../pagar/` para cancelar o pagamento. "Fechada" é conferida pela data do pagamento (≥ fechamento), não pela data de hoje.
+- O pagamento grava `fatura_paga` (data de vencimento) na transferência; o banco garante uma vez por fatura. Pela rota de transações não dá para transferir para um cartão ou saindo dele, nem editar ou apagar um pagamento (409 com a rota certa).
+- Uma compra que cairia numa fatura já paga é recusada.
 - Cada parcela mostra número (`3/12`), vencimento, situação (paga/pendente) e data de pagamento (data da transferência que pagou a fatura).
 - Apagar a compra apaga as parcelas (se nenhuma estiver em fatura paga). Editar compra: apagar e lançar de novo.
 - O `saldo_total` da dashboard desconta só parcelas que vencem até o fim do mês; a dívida total aparece no saldo do cartão.

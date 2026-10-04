@@ -1,4 +1,5 @@
 from django.db.models import Prefetch, ProtectedError, Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.exceptions import ValidationError
@@ -7,12 +8,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from . import dashboard
+from .cartao import (
+    ErroDeFatura,
+    FaturaJaPaga,
+    cancelar_pagamento,
+    com_data_de_pagamento,
+    compra_tem_parcela_paga,
+    montar_fatura,
+    pagar_fatura,
+)
 from .models import Categoria, Compra, Conta, Transacao
 from .periodos import Mes
 from .serializers import (
     CategoriaSerializer,
     CompraSerializer,
     ContaSerializer,
+    FaturaSerializer,
+    PagarFaturaSerializer,
     TransacaoSerializer,
 )
 
@@ -31,10 +43,7 @@ class DoUsuarioViewSet(viewsets.ModelViewSet):
         try:
             return super().destroy(request, *args, **kwargs)
         except ProtectedError:
-            return Response(
-                {'detail': 'Não é possível apagar: existem transações ligadas a este registro.'},
-                status=status.HTTP_409_CONFLICT,
-            )
+            return conflito('Não é possível apagar: existem transações ligadas a este registro.')
 
 
 class ContaViewSet(DoUsuarioViewSet):
@@ -71,10 +80,15 @@ class TransacaoViewSet(DoUsuarioViewSet):
     def destroy(self, request, *args, **kwargs):
         transacao = self.get_object()
         if transacao.compra_id:
-            return Response(
-                {'detail': f'Esta transação é parcela de uma compra no cartão. '
-                           f'Apague a compra inteira em /api/compras/{transacao.compra_id}/.'},
-                status=status.HTTP_409_CONFLICT,
+            return conflito(
+                'Esta transação é parcela de uma compra no cartão. '
+                f'Apague a compra inteira em /api/compras/{transacao.compra_id}/.'
+            )
+        if transacao.fatura_paga:
+            mes = Mes.de(transacao.fatura_paga)
+            return conflito(
+                'Esta transação é o pagamento de uma fatura. Cancele em '
+                f'/api/cartoes/{transacao.conta_destino_id}/faturas/{mes}/pagar/.'
             )
         return super().destroy(request, *args, **kwargs)
 
@@ -104,7 +118,7 @@ class CompraViewSet(DoUsuarioViewSet):
     http_method_names = ['get', 'post', 'delete', 'head', 'options']
 
     def get_queryset(self):
-        parcelas = Transacao.objects.order_by('numero_parcela')
+        parcelas = com_data_de_pagamento(Transacao.objects.order_by('numero_parcela'))
         return (
             super().get_queryset()
             .select_related('cartao', 'categoria')
@@ -115,6 +129,48 @@ class CompraViewSet(DoUsuarioViewSet):
     def perform_create(self, serializer):
         super().perform_create(serializer)
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
+
+    def destroy(self, request, *args, **kwargs):
+        if compra_tem_parcela_paga(self.get_object()):
+            return conflito('Esta compra tem parcela em fatura já paga e não pode ser apagada.')
+        return super().destroy(request, *args, **kwargs)
+
+
+class FaturaView(APIView):
+    def get(self, request, cartao_id, mes):
+        cartao = obter_cartao(request, cartao_id)
+        return Response(FaturaSerializer(montar_fatura(cartao, ler_mes(mes))).data)
+
+
+class PagamentoDaFaturaView(APIView):
+    def post(self, request, cartao_id, mes):
+        cartao = obter_cartao(request, cartao_id)
+        pedido = PagarFaturaSerializer(data=request.data, context={'request': request})
+        pedido.is_valid(raise_exception=True)
+        try:
+            fatura = pagar_fatura(cartao, ler_mes(mes), **pedido.validated_data)
+        except FaturaJaPaga as erro:
+            return conflito(str(erro))
+        except ErroDeFatura as erro:
+            raise ValidationError({'detail': str(erro)}) from None
+        return Response(FaturaSerializer(fatura).data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, cartao_id, mes):
+        cartao = obter_cartao(request, cartao_id)
+        try:
+            fatura = cancelar_pagamento(cartao, ler_mes(mes))
+        except ErroDeFatura as erro:
+            raise ValidationError({'detail': str(erro)}) from None
+        return Response(FaturaSerializer(fatura).data)
+
+
+def obter_cartao(request, cartao_id):
+    # Cartão de outro usuário, ou conta que não é cartão, simplesmente não existe aqui
+    return get_object_or_404(Conta, pk=cartao_id, usuario=request.user, tipo=Conta.Tipo.CARTAO)
+
+
+def conflito(mensagem):
+    return Response({'detail': mensagem}, status=status.HTTP_409_CONFLICT)
 
 
 class DashboardView(APIView):

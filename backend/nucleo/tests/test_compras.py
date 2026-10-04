@@ -233,8 +233,15 @@ class TestesLancamentoDiretoNoCartao(BaseCompras):
         self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('conta', resposta.data)
 
-    def test_transferencia_para_o_cartao_continua_permitida(self):
-        # É o caminho do pagamento da fatura, que o C3 vai validar
+    def test_transferencia_para_o_cartao_e_recusada(self):
+        # Pagar o cartão é só pela rota da fatura, que calcula o valor e marca a fatura
         resposta = self.postar(tipo='transferencia', conta=self.corrente.id,
                                conta_destino=self.nubank.id, categoria='')
-        self.assertEqual(resposta.status_code, status.HTTP_201_CREATED, resposta.data)
+        self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('/pagar/', resposta.data['conta_destino'][0])
+
+    def test_transferencia_saindo_do_cartao_e_recusada(self):
+        resposta = self.postar(tipo='transferencia', conta=self.nubank.id,
+                               conta_destino=self.corrente.id, categoria='')
+        self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('conta', resposta.data)

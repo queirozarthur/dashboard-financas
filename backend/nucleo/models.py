@@ -164,6 +164,8 @@ class Transacao(models.Model):
         'Compra', on_delete=models.CASCADE, null=True, blank=True, related_name='parcelas_geradas'
     )
     numero_parcela = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Preenchido só na transferência que paga uma fatura: a data de vencimento dessa fatura
+    fatura_paga = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ['-data', '-id']
@@ -216,6 +218,18 @@ class Transacao(models.Model):
             models.UniqueConstraint(
                 fields=['compra', 'numero_parcela'],
                 name='transacao_parcela_unica',
+            ),
+            models.CheckConstraint(
+                condition=Q(fatura_paga__isnull=True) | Q(tipo='transferencia'),
+                name='transacao_pagamento_e_transferencia',
+                violation_error_message='Pagamento de fatura é sempre uma transferência.',
+            ),
+            # Garante no banco o "uma vez só", mesmo com dois pedidos chegando juntos
+            models.UniqueConstraint(
+                fields=['conta_destino', 'fatura_paga'],
+                condition=Q(fatura_paga__isnull=False),
+                name='transacao_fatura_paga_uma_vez',
+                violation_error_message='Esta fatura já foi paga.',
             ),
         ]
 
