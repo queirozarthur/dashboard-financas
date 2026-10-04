@@ -1,0 +1,37 @@
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, type LucideIcon } from 'lucide-react'
+import type { FC } from 'react'
+
+import { Linha, Valor } from '@/core/ui'
+import { cn } from '@/core/utils'
+
+import { detalheDoLancamento, tituloDoLancamento } from '../apresentacao'
+import type { Transacao } from '../consts/esquemas'
+
+const ICONES: Record<Transacao['tipo'], { Icone: LucideIcon; cor: string }> = {
+  receita: { Icone: ArrowDownLeft, cor: 'text-receita' },
+  despesa: { Icone: ArrowUpRight, cor: 'text-conteudo-secundario' },
+  transferencia: { Icone: ArrowLeftRight, cor: 'text-marca' },
+}
+
+const TOM = { receita: 'receita', despesa: 'despesa', transferencia: 'neutro' } as const
+
+type LinhaDeLancamentoProps = {
+  transacao: Transacao
+}
+
+export const LinhaDeLancamento: FC<LinhaDeLancamentoProps> = ({ transacao }) => {
+  const { Icone, cor } = ICONES[transacao.tipo]
+  return (
+    <Linha
+      detalhe={detalheDoLancamento(transacao)}
+      icone={
+        // Quadradinho arredondado atrás do ícone, como os ícones das listas do iOS
+        <span className="flex size-8 items-center justify-center rounded-lg bg-fundo">
+          <Icone aria-hidden="true" className={cn('size-4', cor)} strokeWidth={2} />
+        </span>
+      }
+      rotulo={tituloDoLancamento(transacao)}
+      valor={<Valor tom={TOM[transacao.tipo]} valor={transacao.valor} />}
+    />
+  )
+}

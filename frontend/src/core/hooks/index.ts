@@ -1,3 +1,4 @@
+export { useAoAparecer } from './useAoAparecer'
 export { deveFechar, useArrastarParaFechar } from './useArrastarParaFechar'
 export { useMesSelecionado } from './useMesSelecionado'
 export { useTituloRecolhido } from './useTituloRecolhido'

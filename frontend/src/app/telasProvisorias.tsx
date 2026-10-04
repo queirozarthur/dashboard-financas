@@ -11,22 +11,12 @@ import {
   Folha,
   Grupo,
   Linha,
-  SeletorDeMes,
   Tela,
 } from '@/core/ui'
 import { useSessao } from '@/features/auth'
 
 // Provisórias: cada uma é trocada pela tela de verdade no seu passo
-// (T5 lançamentos, T6 contas, T7 cartão, T8 recorrências).
-
-export const TelaLancamentos: FC = () => {
-  return (
-    <Tela titulo="Lançamentos">
-      <SeletorDeMes />
-      <p className="mt-6 px-4 text-conteudo-secundario">A lista do mês chega no T5.</p>
-    </Tela>
-  )
-}
+// (T5b formulário, T6 contas, T7 cartão, T8 recorrências).
 
 type TipoDeExemplo = 'receita' | 'despesa' | 'transferencia'
 

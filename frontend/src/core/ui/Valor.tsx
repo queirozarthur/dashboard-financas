@@ -2,10 +2,12 @@ import type { FC } from 'react'
 
 import { apresentarValor, cn, type TomDoValor } from '@/core/utils'
 
+// Cor explícita também no "normal": dentro de uma Linha, o lado direito é cinza secundário,
+// e valor de dinheiro precisa da cor de texto principal
 const CORES = {
   receita: 'text-receita',
   alerta: 'text-despesa',
-  normal: '',
+  normal: 'text-conteudo',
 } as const
 
 type ValorProps = {

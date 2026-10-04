@@ -1,0 +1,1 @@
+export { TelaLancamentos } from './TelaLancamentos'
