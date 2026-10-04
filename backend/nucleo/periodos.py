@@ -1,4 +1,5 @@
 import re
+from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -29,6 +30,10 @@ class Mes:
 
     def primeiro_dia(self):
         return date(self.ano, self.numero, 1)
+
+    def dia(self, numero):
+        """Dia `numero` do mês; 31 num mês de 30 dias (ou 29 em fevereiro) vira o último dia."""
+        return date(self.ano, self.numero, min(numero, monthrange(self.ano, self.numero)[1]))
 
     def fim_exclusivo(self):
         """Primeiro dia do mês seguinte, para filtrar com data < fim_exclusivo."""

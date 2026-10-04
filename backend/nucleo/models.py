@@ -7,6 +7,21 @@ from django.db.models.functions import Coalesce
 
 DINHEIRO = DecimalField(max_digits=14, decimal_places=2)
 
+# Vale para Transacao e Recorrencia, que têm os mesmos campos de lançamento
+CAMPOS_POR_TIPO = Q(
+    tipo__in=['receita', 'despesa'],
+    categoria__isnull=False,
+    conta_destino__isnull=True,
+) | Q(
+    tipo='transferencia',
+    categoria__isnull=True,
+    conta_destino__isnull=False,
+)
+MENSAGEM_CAMPOS_POR_TIPO = (
+    'Receita e despesa exigem categoria e não têm conta de destino; '
+    'transferência exige conta de destino e não tem categoria.'
+)
+
 
 def _soma_por_conta(campo_conta, valor_assinado, ate):
     # Subquery em vez de Sum direto na Conta: somar duas relações reversas
@@ -166,6 +181,13 @@ class Transacao(models.Model):
     numero_parcela = models.PositiveSmallIntegerField(null=True, blank=True)
     # Preenchido só na transferência que paga uma fatura: a data de vencimento dessa fatura
     fatura_paga = models.DateField(null=True, blank=True)
+    # SET_NULL: apagar a recorrência mantém o histórico do que já aconteceu
+    recorrencia = models.ForeignKey(
+        'Recorrencia', on_delete=models.SET_NULL, null=True, blank=True, related_name='confirmacoes'
+    )
+    # Primeiro dia do mês a que a transação se refere: o aluguel de outubro pago em
+    # 2 de novembro continua sendo de outubro
+    competencia = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ['-data', '-id']
@@ -179,28 +201,26 @@ class Transacao(models.Model):
                 violation_error_message='O valor precisa ser maior que zero.',
             ),
             models.CheckConstraint(
-                condition=(
-                    Q(
-                        tipo__in=['receita', 'despesa'],
-                        categoria__isnull=False,
-                        conta_destino__isnull=True,
-                    )
-                    | Q(
-                        tipo='transferencia',
-                        categoria__isnull=True,
-                        conta_destino__isnull=False,
-                    )
-                ),
+                condition=CAMPOS_POR_TIPO,
                 name='transacao_campos_por_tipo',
-                violation_error_message=(
-                    'Receita e despesa exigem categoria e não têm conta de destino; '
-                    'transferência exige conta de destino e não tem categoria.'
-                ),
+                violation_error_message=MENSAGEM_CAMPOS_POR_TIPO,
             ),
             models.CheckConstraint(
                 condition=~Q(conta_destino=F('conta')),
                 name='transacao_destino_diferente',
                 violation_error_message='A conta de destino precisa ser diferente da conta de origem.',
+            ),
+            models.CheckConstraint(
+                condition=Q(recorrencia__isnull=True) | Q(competencia__isnull=False),
+                name='transacao_recorrencia_com_competencia',
+                violation_error_message='Transação de recorrência exige o mês de competência.',
+            ),
+            # Uma confirmação por mês, mesmo com dois pedidos chegando juntos
+            models.UniqueConstraint(
+                fields=['recorrencia', 'competencia'],
+                condition=Q(recorrencia__isnull=False),
+                name='transacao_recorrencia_uma_vez_por_mes',
+                violation_error_message='Esta recorrência já foi confirmada neste mês.',
             ),
             models.CheckConstraint(
                 condition=(
@@ -267,3 +287,67 @@ class Compra(models.Model):
 
     def __str__(self):
         return f'{self.data_compra} {self.descricao} {self.valor_total} em {self.parcelas}x'
+
+
+class Recorrencia(models.Model):
+    """Lançamento mensal previsto; vira Transacao só quando confirmado (nucleo.recorrencias)."""
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='recorrencias'
+    )
+    descricao = models.CharField(max_length=200)
+    tipo = models.CharField(max_length=13, choices=Transacao.Tipo.choices)
+    valor = models.DecimalField(max_digits=12, decimal_places=2)
+    conta = models.ForeignKey(Conta, on_delete=models.PROTECT, related_name='recorrencias')
+    conta_destino = models.ForeignKey(
+        Conta,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='recorrencias_recebidas',
+    )
+    categoria = models.ForeignKey(
+        Categoria,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='recorrencias',
+    )
+    # Em mês mais curto, dia 31 vira o último dia do mês
+    dia = models.PositiveSmallIntegerField()
+    # Primeiro dia do mês de início e do último mês (inclusive); sem fim, não acaba
+    inicio = models.DateField()
+    fim = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['dia', 'descricao']
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valor__gt=0),
+                name='recorrencia_valor_positivo',
+                violation_error_message='O valor precisa ser maior que zero.',
+            ),
+            models.CheckConstraint(
+                condition=CAMPOS_POR_TIPO,
+                name='recorrencia_campos_por_tipo',
+                violation_error_message=MENSAGEM_CAMPOS_POR_TIPO,
+            ),
+            models.CheckConstraint(
+                condition=~Q(conta_destino=F('conta')),
+                name='recorrencia_destino_diferente',
+                violation_error_message='A conta de destino precisa ser diferente da conta de origem.',
+            ),
+            models.CheckConstraint(
+                condition=Q(dia__gte=1, dia__lte=31),
+                name='recorrencia_dia_valido',
+                violation_error_message='O dia precisa estar entre 1 e 31.',
+            ),
+            models.CheckConstraint(
+                condition=Q(inicio__day=1) & (Q(fim__isnull=True) | Q(fim__day=1, fim__gte=F('inicio'))),
+                name='recorrencia_periodo_valido',
+                violation_error_message='Início e fim são meses, e o fim não pode ser antes do início.',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.descricao} (dia {self.dia})'

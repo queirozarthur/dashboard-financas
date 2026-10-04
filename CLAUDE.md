@@ -103,6 +103,16 @@ Validações da `Transacao` (no serializer):
 - Fora da primeira versão: limite disponível, estorno, editar compra parcelada, antecipar parcelas.
 - Passos: C1 models e regras de fatura; C2 API de compras; C3 faturas e pagamento; C4 conferir a dashboard com cartão. **Todos concluídos.**
 
+## Recorrências (fase 2a)
+
+- **`Recorrencia`** (usuario, descricao, tipo, valor, conta, conta_destino, categoria, dia 1–31, inicio, fim opcional): só mensal; receita, despesa ou transferência; nunca em cartão. Mesmas validações da `Transacao`. `inicio` e `fim` guardam o primeiro dia do mês.
+- **Prevista, você confirma:** previstos são calculados (recorrências ativas no mês sem transação confirmada para aquela competência), nunca armazenados. Confirmar cria a `Transacao` com `recorrencia` e `competencia` (primeiro dia do mês a que se refere); valor, data e conta sugeridos podem ser trocados na confirmação. Uma confirmação por recorrência por mês (garantido no banco).
+- Dia 31 em mês curto vira o último dia. Apagar a transação confirmada volta o mês para previsto.
+- Mês em que não aconteceu fica previsto só naquele mês (sem "pular" na primeira versão).
+- Editar a recorrência afeta só meses não confirmados. Apagar a recorrência mantém as transações confirmadas (`SET_NULL`).
+- Dashboard ganha `previsto`: receitas e despesas previstas e `resultado_projetado`; transferências previstas ficam fora.
+- Passos: R1 model e regras; R2 API (cadastro, previstos, confirmação); R3 bloco previsto na dashboard.
+
 ## Ordem dos passos
 
 1. Ambiente: venv, dependências, projeto Django, PostgreSQL via `.env`, `.gitignore`, primeiro commit.
@@ -114,6 +124,6 @@ Validações da `Transacao` (no serializer):
 
 ## Fora do escopo por enquanto
 
-- Recorrências, orçamentos, metas e investimentos: fases seguintes.
+- Orçamentos (próximo, depois das recorrências), depois as telas; metas e investimentos em fases seguintes.
 - Funcionalidades de freelancer (contas a receber, MEI): decidi não incluir.
 - Telas: só depois do backend estar testado.

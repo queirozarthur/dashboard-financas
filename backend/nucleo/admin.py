@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Categoria, Compra, Conta, Transacao
+from .models import Categoria, Compra, Conta, Recorrencia, Transacao
 
 
 @admin.register(Conta)
@@ -53,3 +53,11 @@ class CompraAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Recorrencia)
+class RecorrenciaAdmin(admin.ModelAdmin):
+    list_display = ['descricao', 'tipo', 'valor', 'dia', 'inicio', 'fim', 'conta', 'categoria', 'usuario']
+    list_filter = ['tipo', 'conta', 'usuario']
+    list_select_related = ['conta', 'categoria', 'usuario']
+    search_fields = ['descricao']

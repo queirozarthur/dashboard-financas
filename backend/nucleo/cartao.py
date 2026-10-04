@@ -1,4 +1,3 @@
-from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date
 from decimal import ROUND_DOWN, Decimal
@@ -21,8 +20,7 @@ class FaturaJaPaga(ErroDeFatura):
 
 
 def dia_no_mes(mes, dia):
-    # Dia 31 num mês de 30 dias (ou 29 em fevereiro) vira o último dia do mês
-    return date(mes.ano, mes.numero, min(dia, monthrange(mes.ano, mes.numero)[1]))
+    return mes.dia(dia)
 
 
 def mes_de_fechamento(cartao, data_compra):
