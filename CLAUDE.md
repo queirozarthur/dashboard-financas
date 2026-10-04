@@ -119,9 +119,10 @@ Validações da `Transacao` (no serializer):
 
 - **`Orcamento`** (usuario, categoria só de despesa, valor, inicio): o limite vale de `inicio` em diante, até existir outro mais novo para a mesma categoria. Mudar o limite cria uma nova vigência; meses antigos mantêm o limite antigo. Um orçamento por categoria por mês de início.
 - A sobra não passa para o mês seguinte.
-- Dashboard ganha `orcamentos`: por categoria com limite, `limite`, `gasto` (realizado pela data, inclui parcelas do cartão), `previsto` (recorrências não confirmadas da categoria), `restante` (limite − gasto − previsto, pode ser negativo) e `percentual`; mais uma linha de total.
+- Dashboard ganha `orcamentos`: por categoria com limite, `limite`, `gasto` (realizado pela data, inclui parcelas do cartão), `previsto` (recorrências não confirmadas da categoria), `restante` (limite − gasto − previsto, pode ser negativo) e `percentual` = (gasto + previsto) / limite, o quanto já está comprometido; mais uma linha de total (`percentual` nulo sem orçamentos).
 - Rotas: CRUD em `/api/orcamentos/` (`inicio` como `AAAA-MM`); `?mes=AAAA-MM` lista os limites que valem no mês.
-- Passos: O1 model, regra de vigência e API; O2 bloco na dashboard.
+- Passos: O1 model, regra de vigência e API; O2 bloco na dashboard. **Todos concluídos.**
+- Limitação conhecida: não dá para encerrar um limite a partir de um mês (só mudar o valor ou apagar).
 
 ## Ordem dos passos
 

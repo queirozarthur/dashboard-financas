@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db.models import Q, Sum, Value
 from django.db.models.functions import Coalesce, TruncMonth
 
-from . import recorrencias
+from . import orcamentos, recorrencias
 from .models import DINHEIRO, Categoria, Conta, Transacao
 
 ZERO = Decimal('0.00')
@@ -43,6 +43,62 @@ def previsto_do_mes(usuario, mes):
         receitas=soma(Q(tipo=Transacao.Tipo.RECEITA)),
         despesas=soma(Q(tipo=Transacao.Tipo.DESPESA)),
     )
+
+
+def percentual(parte, todo):
+    if not todo:
+        return None
+    return str((parte * 100 / todo).quantize(Decimal('0.1')))
+
+
+def orcamentos_do_mes(usuario, mes):
+    # Três consultas fixas, qualquer que seja o número de categorias: limites, gastos e previstos
+    limites = list(orcamentos.vigentes(usuario, mes))
+    ids = [limite.categoria_id for limite in limites]
+
+    gastos = dict(
+        transacoes_do_periodo(usuario, mes.primeiro_dia(), mes.fim_exclusivo())
+        .filter(tipo=Transacao.Tipo.DESPESA, categoria_id__in=ids)
+        .values('categoria_id')
+        .annotate(total=soma())
+        .order_by()
+        .values_list('categoria_id', 'total')
+    )
+    previstos = dict(
+        recorrencias.previstas(usuario, mes)
+        .filter(tipo=Transacao.Tipo.DESPESA, categoria_id__in=ids)
+        .values('categoria_id')
+        .annotate(total=soma())
+        .order_by()
+        .values_list('categoria_id', 'total')
+    )
+
+    def linha(limite, gasto, previsto):
+        # percentual = quanto do limite já está comprometido; passa de 100 quando estoura
+        return {
+            'limite': texto(limite),
+            'gasto': texto(gasto),
+            'previsto': texto(previsto),
+            'restante': texto(limite - gasto - previsto),
+            'percentual': percentual(gasto + previsto, limite),
+        }
+
+    categorias = []
+    for orcamento in sorted(limites, key=lambda o: o.categoria.nome):
+        gasto = gastos.get(orcamento.categoria_id, ZERO)
+        previsto = previstos.get(orcamento.categoria_id, ZERO)
+        categorias.append({
+            'categoria_id': orcamento.categoria_id,
+            'categoria': orcamento.categoria.nome,
+            **linha(orcamento.valor, gasto, previsto),
+        })
+
+    total = linha(
+        sum((o.valor for o in limites), ZERO),
+        sum(gastos.values(), ZERO),
+        sum(previstos.values(), ZERO),
+    )
+    return {'categorias': categorias, 'total': total}
 
 
 def saldo_total(usuario, ate):
@@ -114,6 +170,7 @@ def resumo_do_mes(usuario, mes):
                 atual['resultado'] + previsto['receitas'] - previsto['despesas']
             ),
         },
+        'orcamentos': orcamentos_do_mes(usuario, mes),
     }
 
 
