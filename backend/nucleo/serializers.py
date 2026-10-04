@@ -18,7 +18,10 @@ class ContaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Conta
-        fields = ['id', 'nome', 'tipo', 'saldo_inicial', 'dia_fechamento', 'dia_vencimento', 'saldo']
+        fields = [
+            'id', 'nome', 'tipo', 'saldo_inicial', 'dia_fechamento', 'dia_vencimento', 'cor', 'icone',
+            'saldo',
+        ]
         extra_kwargs = {
             'dia_fechamento': {'min_value': 1, 'max_value': 31},
             'dia_vencimento': {'min_value': 1, 'max_value': 31},
@@ -52,7 +55,7 @@ class ContaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
 class CategoriaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
     class Meta:
         model = Categoria
-        fields = ['id', 'nome', 'natureza', 'tipo']
+        fields = ['id', 'nome', 'natureza', 'tipo', 'cor', 'icone']
 
     def validate(self, dados):
         nome = dados.get('nome', getattr(self.instance, 'nome', None))
@@ -90,6 +93,9 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         source='conta_destino.nome', read_only=True, allow_null=True
     )
     categoria_nome = serializers.CharField(source='categoria.nome', read_only=True, allow_null=True)
+    # Para a lista mostrar o quadradinho colorido da categoria sem outra busca
+    categoria_cor = serializers.CharField(source='categoria.cor', read_only=True, allow_null=True)
+    categoria_icone = serializers.CharField(source='categoria.icone', read_only=True, allow_null=True)
 
     class Meta:
         model = Transacao
@@ -97,7 +103,7 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             'id', 'tipo', 'valor', 'data', 'descricao',
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
-            'categoria', 'categoria_nome',
+            'categoria', 'categoria_nome', 'categoria_cor', 'categoria_icone',
             'compra', 'numero_parcela', 'fatura_paga', 'recorrencia', 'competencia',
         ]
         # Parcelas, pagamentos de fatura e confirmações têm rotas próprias;

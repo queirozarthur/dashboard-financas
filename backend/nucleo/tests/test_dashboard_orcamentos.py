@@ -47,7 +47,8 @@ class TestesOrcamentosNaDashboard(BaseOrcamentosNaDashboard):
         self.criar_despesa('500.00', data=OUTUBRO)
         self.criar_despesa('120.00', data=OUTUBRO)
         self.assertEqual(self.linha('Mercado'), {
-            'categoria_id': self.mercado.id, 'categoria': 'Mercado', 'limite': '800.00',
+            'categoria_id': self.mercado.id, 'categoria': 'Mercado', 'cor': 'laranja', 'icone': 'etiqueta',
+            'limite': '800.00',
             'gasto': '620.00', 'previsto': '0.00', 'restante': '180.00', 'percentual': '77.5',
         })
 
@@ -122,7 +123,8 @@ class TestesPrevistoNoOrcamento(BaseOrcamentosNaDashboard):
     def test_recorrencia_nao_confirmada_entra_como_previsto(self):
         self.criar_despesa('300.00', data=OUTUBRO)
         self.assertEqual(self.linha('Mercado'), {
-            'categoria_id': self.mercado.id, 'categoria': 'Mercado', 'limite': '2000.00',
+            'categoria_id': self.mercado.id, 'categoria': 'Mercado', 'cor': 'laranja', 'icone': 'etiqueta',
+            'limite': '2000.00',
             'gasto': '300.00', 'previsto': '1500.00', 'restante': '200.00', 'percentual': '90.0',
         })
 

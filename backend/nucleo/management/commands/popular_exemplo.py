@@ -9,6 +9,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from nucleo import cartao as regras_do_cartao
+from nucleo.aparencia import Cor, Icone
 from nucleo.models import Categoria, Compra, Conta, Orcamento, Recorrencia, Transacao
 from nucleo.periodos import Mes
 from nucleo.recorrencias import confirmar
@@ -101,28 +102,30 @@ class Populador:
         )
 
     def criar_contas_e_categorias(self):
-        self.corrente = self.nova_conta('Corrente', Conta.Tipo.CORRENTE, '2500.00')
-        self.carteira = self.nova_conta('Carteira', Conta.Tipo.DINHEIRO, '150.00')
-        self.investimentos = self.nova_conta('Investimentos', Conta.Tipo.INVESTIMENTO, '10000.00')
+        self.corrente = self.nova_conta('Corrente', Conta.Tipo.CORRENTE, '2500.00', cor=Cor.AZUL)
+        self.carteira = self.nova_conta('Carteira', Conta.Tipo.DINHEIRO, '150.00', cor=Cor.VERDE)
+        self.investimentos = self.nova_conta(
+            'Investimentos', Conta.Tipo.INVESTIMENTO, '10000.00', cor=Cor.VIOLETA
+        )
         self.nubank = self.nova_conta(
-            'Nubank', Conta.Tipo.CARTAO, dia_fechamento=25, dia_vencimento=5
+            'Nubank', Conta.Tipo.CARTAO, dia_fechamento=25, dia_vencimento=5, cor=Cor.ROSA
         )
 
         self.categorias = {}
         despesa, receita = Categoria.Natureza.DESPESA, Categoria.Natureza.RECEITA
         fixo, variavel = Categoria.Tipo.FIXO, Categoria.Tipo.VARIAVEL
-        for nome, natureza, tipo in [
-            ('Moradia', despesa, fixo),
-            ('Assinaturas', despesa, fixo),
-            ('Mercado', despesa, variavel),
-            ('Transporte', despesa, variavel),
-            ('Lazer', despesa, variavel),
-            ('Saúde', despesa, variavel),
-            ('Salário', receita, fixo),
-            ('Extras', receita, variavel),
+        for nome, natureza, tipo, icone, cor in [
+            ('Moradia', despesa, fixo, Icone.CASA, Cor.AZUL),
+            ('Assinaturas', despesa, fixo, Icone.INTERNET, Cor.VIOLETA),
+            ('Mercado', despesa, variavel, Icone.CARRINHO, Cor.LARANJA),
+            ('Transporte', despesa, variavel, Icone.ONIBUS, Cor.AMARELO),
+            ('Lazer', despesa, variavel, Icone.LAZER, Cor.ROSA),
+            ('Saúde', despesa, variavel, Icone.SAUDE, Cor.VERMELHO),
+            ('Salário', receita, fixo, Icone.TRABALHO, Cor.VERDE),
+            ('Extras', receita, variavel, Icone.DINHEIRO, Cor.TURQUESA),
         ]:
             self.categorias[nome] = Categoria.objects.create(
-                usuario=self.dono, nome=nome, natureza=natureza, tipo=tipo
+                usuario=self.dono, nome=nome, natureza=natureza, tipo=tipo, icone=icone, cor=cor
             )
 
     def criar_recorrencias(self):

@@ -5,6 +5,8 @@ from django.db import models
 from django.db.models import Case, DecimalField, F, OuterRef, Q, Subquery, Sum, Value, When
 from django.db.models.functions import Coalesce
 
+from .aparencia import ICONE_DA_CONTA, Cor, Icone, proxima_cor
+
 DINHEIRO = DecimalField(max_digits=14, decimal_places=2)
 
 # Vale para Transacao e Recorrencia, que têm os mesmos campos de lançamento
@@ -69,6 +71,9 @@ class Conta(models.Model):
     # Só para cartão; em mês mais curto, dia 31 vira o último dia do mês
     dia_fechamento = models.PositiveSmallIntegerField(null=True, blank=True)
     dia_vencimento = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Em branco no cadastro: o save() escolhe (próxima cor da paleta, ícone pelo tipo)
+    cor = models.CharField(max_length=10, choices=Cor.choices, blank=True, default='')
+    icone = models.CharField(max_length=20, choices=Icone.choices, blank=True, default='')
 
     objects = ContaQuerySet.as_manager()
 
@@ -110,6 +115,13 @@ class Conta(models.Model):
     def e_cartao(self):
         return self.tipo == self.Tipo.CARTAO
 
+    def save(self, *args, **kwargs):
+        if not self.cor:
+            self.cor = proxima_cor(Conta.objects.filter(usuario_id=self.usuario_id).count())
+        if not self.icone:
+            self.icone = ICONE_DA_CONTA[self.tipo]
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.nome
 
@@ -129,6 +141,9 @@ class Categoria(models.Model):
     nome = models.CharField(max_length=60)
     natureza = models.CharField(max_length=7, choices=Natureza.choices)
     tipo = models.CharField(max_length=8, choices=Tipo.choices)
+    # Em branco no cadastro: o save() escolhe (próxima cor da paleta, etiqueta)
+    cor = models.CharField(max_length=10, choices=Cor.choices, blank=True, default='')
+    icone = models.CharField(max_length=20, choices=Icone.choices, blank=True, default='')
 
     class Meta:
         ordering = ['natureza', 'nome']
@@ -140,6 +155,13 @@ class Categoria(models.Model):
                 violation_error_message='Você já tem uma categoria com esse nome e natureza.',
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.cor:
+            self.cor = proxima_cor(Categoria.objects.filter(usuario_id=self.usuario_id).count())
+        if not self.icone:
+            self.icone = Icone.ETIQUETA
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.nome} ({self.get_natureza_display()})'

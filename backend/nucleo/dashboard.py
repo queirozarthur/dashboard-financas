@@ -90,6 +90,8 @@ def orcamentos_do_mes(usuario, mes):
         categorias.append({
             'categoria_id': orcamento.categoria_id,
             'categoria': orcamento.categoria.nome,
+            'cor': orcamento.categoria.cor,
+            'icone': orcamento.categoria.icone,
             **linha(orcamento.valor, gasto, previsto),
         })
 
@@ -110,7 +112,7 @@ def gastos_por_categoria(usuario, mes, total_despesas):
     grupos = (
         transacoes_do_periodo(usuario, mes.primeiro_dia(), mes.fim_exclusivo())
         .filter(tipo=Transacao.Tipo.DESPESA)
-        .values('categoria_id', 'categoria__nome', 'categoria__tipo')
+        .values('categoria_id', 'categoria__nome', 'categoria__tipo', 'categoria__cor', 'categoria__icone')
         .annotate(total=soma())
         .order_by('-total', 'categoria__nome')
     )
@@ -119,6 +121,8 @@ def gastos_por_categoria(usuario, mes, total_despesas):
             'categoria_id': grupo['categoria_id'],
             'categoria': grupo['categoria__nome'],
             'tipo': grupo['categoria__tipo'],
+            'cor': grupo['categoria__cor'],
+            'icone': grupo['categoria__icone'],
             'total': texto(grupo['total']),
             'percentual': str((grupo['total'] * 100 / total_despesas).quantize(Decimal('0.1'))),
         }

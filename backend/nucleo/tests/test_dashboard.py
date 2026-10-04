@@ -129,9 +129,9 @@ class TestesGastosPorCategoria(BaseAPI):
         gastos = self.client.get('/api/dashboard/?mes=2026-10').data['gastos_por_categoria']
         self.assertEqual(gastos, [
             {'categoria_id': self.aluguel.id, 'categoria': 'Aluguel', 'tipo': 'fixo',
-             'total': '800.00', 'percentual': '80.0'},
+             'total': '800.00', 'percentual': '80.0', 'cor': self.aluguel.cor, 'icone': 'etiqueta'},
             {'categoria_id': self.mercado.id, 'categoria': 'Mercado', 'tipo': 'variavel',
-             'total': '200.00', 'percentual': '20.0'},
+             'total': '200.00', 'percentual': '20.0', 'cor': 'laranja', 'icone': 'etiqueta'},
         ])
 
     def test_fixo_e_variavel_so_com_despesas(self):
