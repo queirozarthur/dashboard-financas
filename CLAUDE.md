@@ -124,6 +124,16 @@ Validações da `Transacao` (no serializer):
 - Passos: O1 model, regra de vigência e API; O2 bloco na dashboard. **Todos concluídos.**
 - Limitação conhecida: não dá para encerrar um limite a partir de um mês (só mudar o valor ou apagar).
 
+## Frontend (fase 3)
+
+- Pasta `frontend/`, React + Vite + TypeScript. As skills de front-end são escritas para monorepo/Next.js; aqui aplicamos as regras delas **dentro do `frontend/`**, sem Turborepo: `src/app` (rotas, providers), `src/core/{ui,api,utils}`, `src/features/<nome>` (cada pasta com `index.ts`, `components/`, `hooks/`, `consts/`). Named exports, componentes `FC` com `type`, lógica em hooks.
+- Tailwind com tokens semânticos (sem cor crua), `tv()` para variantes e `cn()` para classes condicionais. Componentes próprios; Radix só para comportamento acessível (Dialog, Select...). React Router, TanStack Query, Recharts, Vitest + Testing Library, vite-plugin-pwa.
+- **Visual "applenizado"** (estilo iOS): fonte do sistema (SF) no Apple e Inter nos outros; títulos grandes que encolhem ao rolar; listas agrupadas em blocos arredondados sobre fundo cinza claro; barra de abas embaixo translúcida com desfoque; formulários como bottom sheet; controle segmentado; números tabulares; resposta ao toque (scale) e animações com mola. **Só tema claro.** Cor principal verde-azulado; verde para receita e vermelho para despesa ficam reservados.
+- Sessão: access token só na memória; refresh no `localStorage` (trocar por cookie httpOnly antes de publicar na internet).
+- Dinheiro chega e volta como texto; só é formatado para exibir, nunca vira float. Nenhuma soma no frontend.
+- Gráficos seguem a skill `dataviz` (paleta validada pelo script, barras em vez de pizza).
+- Passos: T1 base; T2 login e sessão; T3 layout e componentes; T4 dashboard; T5 lançamentos; T6 contas e categorias; T7 cartão; T8 recorrências e orçamentos; T9 PWA.
+
 ## Ordem dos passos
 
 1. Ambiente: venv, dependências, projeto Django, PostgreSQL via `.env`, `.gitignore`, primeiro commit.
