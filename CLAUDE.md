@@ -101,7 +101,7 @@ Validações da `Transacao` (no serializer):
 - Apagar a compra apaga as parcelas (se nenhuma estiver em fatura paga). Editar compra: apagar e lançar de novo.
 - O `saldo_total` da dashboard desconta só parcelas que vencem até o fim do mês; a dívida total aparece no saldo do cartão.
 - Fora da primeira versão: limite disponível, estorno, editar compra parcelada, antecipar parcelas.
-- Passos: C1 models e regras de fatura; C2 API de compras; C3 faturas e pagamento; C4 conferir a dashboard com cartão.
+- Passos: C1 models e regras de fatura; C2 API de compras; C3 faturas e pagamento; C4 conferir a dashboard com cartão. **Todos concluídos.**
 
 ## Ordem dos passos
 
