@@ -9,6 +9,7 @@ from .views import (
     EvolucaoView,
     FaturaView,
     PagamentoDaFaturaView,
+    RecorrenciaViewSet,
     TransacaoViewSet,
 )
 
@@ -17,6 +18,7 @@ rotas.register('contas', ContaViewSet, basename='conta')
 rotas.register('categorias', CategoriaViewSet, basename='categoria')
 rotas.register('transacoes', TransacaoViewSet, basename='transacao')
 rotas.register('compras', CompraViewSet, basename='compra')
+rotas.register('recorrencias', RecorrenciaViewSet, basename='recorrencia')
 
 urlpatterns = [
     path('dashboard/', DashboardView.as_view(), name='dashboard'),

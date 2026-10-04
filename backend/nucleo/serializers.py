@@ -2,7 +2,9 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .cartao import ErroDeFatura, registrar_compra
-from .models import Categoria, Compra, Conta, Transacao
+from .models import Categoria, Compra, Conta, Recorrencia, Transacao
+from .periodos import Mes
+from .recorrencias import data_sugerida
 
 
 class DoUsuarioMixin:
@@ -64,14 +66,15 @@ class CategoriaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
                 {'nome': 'Você já tem uma categoria com esse nome e natureza.'}
             )
 
-        # Trocar a natureza deixaria as transações antigas com categoria incompatível
+        # Trocar a natureza deixaria transações e recorrências com categoria incompatível
         if (
             self.instance
             and natureza != self.instance.natureza
-            and self.instance.transacoes.exists()
+            and (self.instance.transacoes.exists() or self.instance.recorrencias.exists())
         ):
             raise serializers.ValidationError(
-                {'natureza': 'Não é possível mudar a natureza de uma categoria que já tem transações.'}
+                {'natureza': 'Não é possível mudar a natureza de uma categoria que já tem '
+                             'transações ou recorrências.'}
             )
         return dados
 
@@ -91,10 +94,11 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
             'categoria', 'categoria_nome',
-            'compra', 'numero_parcela', 'fatura_paga',
+            'compra', 'numero_parcela', 'fatura_paga', 'recorrencia', 'competencia',
         ]
-        # Parcelas e pagamentos de fatura têm rotas próprias; aqui o cliente só enxerga o vínculo
-        read_only_fields = ['compra', 'numero_parcela', 'fatura_paga']
+        # Parcelas, pagamentos de fatura e confirmações têm rotas próprias;
+        # aqui o cliente só enxerga o vínculo
+        read_only_fields = ['compra', 'numero_parcela', 'fatura_paga', 'recorrencia', 'competencia']
 
     def get_fields(self):
         campos = super().get_fields()
@@ -124,48 +128,54 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
                 'Para corrigir, cancele o pagamento na rota da fatura e pague de novo.'
             )
 
-        # Num PATCH só chegam os campos alterados; o resto vem do objeto salvo
-        def atual(campo):
-            return dados.get(campo, getattr(self.instance, campo, None))
-
-        tipo = atual('tipo')
-        conta = atual('conta')
-        conta_destino = atual('conta_destino')
-        categoria = atual('categoria')
-        erros = {}
-
-        if tipo == Transacao.Tipo.TRANSFERENCIA:
-            if conta_destino is None:
-                erros['conta_destino'] = 'Transferência exige conta de destino.'
-            elif conta_destino == conta:
-                erros['conta_destino'] = 'A conta de destino precisa ser diferente da conta de origem.'
-            if categoria is not None:
-                erros['categoria'] = 'Transferência não tem categoria.'
-            # No cartão só entram compras e o pagamento da fatura, que tem rota própria
-            if conta_destino is not None and conta_destino.e_cartao:
-                erros['conta_destino'] = (
-                    'Para pagar o cartão, use a rota de pagamento da fatura: '
-                    '/api/cartoes/<id>/faturas/<AAAA-MM>/pagar/.'
-                )
-            if conta is not None and conta.e_cartao:
-                erros['conta'] = 'Não é possível transferir saindo de um cartão de crédito.'
-        else:
-            if categoria is None:
-                erros['categoria'] = 'Receita e despesa exigem categoria.'
-            elif categoria.natureza != tipo:
-                erros['categoria'] = (
-                    f'A categoria é de {categoria.get_natureza_display().lower()}, '
-                    f'mas a transação é de {Transacao.Tipo(tipo).label.lower()}.'
-                )
-            if conta_destino is not None:
-                erros['conta_destino'] = 'Só transferência tem conta de destino.'
-            # No cartão, a despesa precisa cair na fatura certa: isso só a compra calcula
-            if conta is not None and conta.e_cartao:
-                erros['conta'] = 'No cartão, lance a despesa como compra em /api/compras/.'
-
-        if erros:
-            raise serializers.ValidationError(erros)
+        validar_lancamento(dados, self.instance)
         return dados
+
+
+def validar_lancamento(dados, instancia=None):
+    """Regras de receita, despesa e transferência; valem para Transacao e Recorrencia."""
+
+    # Num PATCH só chegam os campos alterados; o resto vem do objeto salvo
+    def atual(campo):
+        return dados.get(campo, getattr(instancia, campo, None))
+
+    tipo = atual('tipo')
+    conta = atual('conta')
+    conta_destino = atual('conta_destino')
+    categoria = atual('categoria')
+    erros = {}
+
+    if tipo == Transacao.Tipo.TRANSFERENCIA:
+        if conta_destino is None:
+            erros['conta_destino'] = 'Transferência exige conta de destino.'
+        elif conta_destino == conta:
+            erros['conta_destino'] = 'A conta de destino precisa ser diferente da conta de origem.'
+        if categoria is not None:
+            erros['categoria'] = 'Transferência não tem categoria.'
+        # No cartão só entram compras e o pagamento da fatura, que tem rota própria
+        if conta_destino is not None and conta_destino.e_cartao:
+            erros['conta_destino'] = (
+                'Para pagar o cartão, use a rota de pagamento da fatura: '
+                '/api/cartoes/<id>/faturas/<AAAA-MM>/pagar/.'
+            )
+        if conta is not None and conta.e_cartao:
+            erros['conta'] = 'Não é possível transferir saindo de um cartão de crédito.'
+    else:
+        if categoria is None:
+            erros['categoria'] = 'Receita e despesa exigem categoria.'
+        elif categoria.natureza != tipo:
+            erros['categoria'] = (
+                f'A categoria é de {categoria.get_natureza_display().lower()}, '
+                f'mas o lançamento é de {Transacao.Tipo(tipo).label.lower()}.'
+            )
+        if conta_destino is not None:
+            erros['conta_destino'] = 'Só transferência tem conta de destino.'
+        # No cartão, a despesa precisa cair na fatura certa: isso só a compra calcula
+        if conta is not None and conta.e_cartao:
+            erros['conta'] = 'No cartão, lance a despesa como compra em /api/compras/.'
+
+    if erros:
+        raise serializers.ValidationError(erros)
 
 
 class ParcelaSerializer(serializers.ModelSerializer):
@@ -283,3 +293,113 @@ class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         except ErroDeFatura as erro:
             # Lista, como nos outros erros: fora do validate() o DRF não normaliza o formato
             raise serializers.ValidationError({'data_compra': [str(erro)]}) from None
+
+
+class CampoMes(serializers.Field):
+    """Mês como 'AAAA-MM' na API; no banco, o primeiro dia do mês."""
+
+    default_error_messages = {'invalido': 'Use o formato AAAA-MM, por exemplo 2026-10.'}
+
+    def to_representation(self, valor):
+        return str(Mes.de(valor))
+
+    def to_internal_value(self, texto):
+        try:
+            return Mes.ler(str(texto)).primeiro_dia()
+        except ValueError:
+            self.fail('invalido')
+
+
+class RecorrenciaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
+    conta_nome = serializers.CharField(source='conta.nome', read_only=True)
+    conta_destino_nome = serializers.CharField(
+        source='conta_destino.nome', read_only=True, allow_null=True
+    )
+    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True, allow_null=True)
+    inicio = CampoMes()
+    fim = CampoMes(required=False, allow_null=True)
+
+    class Meta:
+        model = Recorrencia
+        fields = [
+            'id', 'descricao', 'tipo', 'valor', 'dia', 'inicio', 'fim',
+            'conta', 'conta_nome',
+            'conta_destino', 'conta_destino_nome',
+            'categoria', 'categoria_nome',
+        ]
+        extra_kwargs = {'dia': {'min_value': 1, 'max_value': 31}}
+
+    def get_fields(self):
+        campos = super().get_fields()
+        contas = Conta.objects.filter(usuario=self.usuario)
+        campos['conta'].queryset = contas
+        campos['conta_destino'].queryset = contas
+        campos['categoria'].queryset = Categoria.objects.filter(usuario=self.usuario)
+        return campos
+
+    def validate_valor(self, valor):
+        if valor <= 0:
+            raise serializers.ValidationError('O valor precisa ser maior que zero.')
+        return valor
+
+    def validate(self, dados):
+        validar_lancamento(dados, self.instance)
+        inicio = dados.get('inicio', getattr(self.instance, 'inicio', None))
+        fim = dados.get('fim', getattr(self.instance, 'fim', None))
+        if fim is not None and fim < inicio:
+            raise serializers.ValidationError({'fim': 'O fim não pode ser antes do início.'})
+        return dados
+
+
+class PrevistaSerializer(serializers.ModelSerializer):
+    """Espera `mes` no contexto, para sugerir a data."""
+
+    recorrencia = serializers.IntegerField(source='id')
+    data = serializers.SerializerMethodField()
+    conta_nome = serializers.CharField(source='conta.nome')
+    conta_destino_nome = serializers.CharField(source='conta_destino.nome', allow_null=True)
+    categoria_nome = serializers.CharField(source='categoria.nome', allow_null=True)
+
+    class Meta:
+        model = Recorrencia
+        fields = [
+            'recorrencia', 'descricao', 'tipo', 'valor', 'data',
+            'conta', 'conta_nome',
+            'conta_destino', 'conta_destino_nome',
+            'categoria', 'categoria_nome',
+        ]
+
+    def get_data(self, recorrencia):
+        # Texto 'AAAA-MM-DD', como os DateField; o método devolveria um objeto date
+        return data_sugerida(recorrencia, self.context['mes']).isoformat()
+
+
+class ConfirmarSerializer(DoUsuarioMixin, serializers.Serializer):
+    """Espera `recorrencia` no contexto; valor, data e conta substituem os sugeridos."""
+
+    mes = serializers.CharField()
+    valor = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    data = serializers.DateField(required=False)
+    conta = serializers.PrimaryKeyRelatedField(queryset=Conta.objects.none(), required=False)
+
+    def get_fields(self):
+        campos = super().get_fields()
+        campos['conta'].queryset = Conta.objects.filter(usuario=self.usuario)
+        return campos
+
+    def validate_mes(self, texto):
+        try:
+            return Mes.ler(texto)
+        except ValueError:
+            raise serializers.ValidationError('Use o formato AAAA-MM, por exemplo 2026-10.') from None
+
+    def validate_valor(self, valor):
+        if valor <= 0:
+            raise serializers.ValidationError('O valor precisa ser maior que zero.')
+        return valor
+
+    def validate(self, dados):
+        # Trocar a conta não pode quebrar as regras (cartão, destino igual à origem)
+        if 'conta' in dados:
+            validar_lancamento({'conta': dados['conta']}, self.context['recorrencia'])
+        return dados

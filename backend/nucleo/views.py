@@ -2,12 +2,13 @@ from django.db.models import Prefetch, ProtectedError, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import dashboard
+from . import dashboard, recorrencias
 from .cartao import (
     ErroDeFatura,
     FaturaJaPaga,
@@ -17,14 +18,17 @@ from .cartao import (
     montar_fatura,
     pagar_fatura,
 )
-from .models import Categoria, Compra, Conta, Transacao
+from .models import Categoria, Compra, Conta, Recorrencia, Transacao
 from .periodos import Mes
 from .serializers import (
     CategoriaSerializer,
     CompraSerializer,
+    ConfirmarSerializer,
     ContaSerializer,
     FaturaSerializer,
     PagarFaturaSerializer,
+    PrevistaSerializer,
+    RecorrenciaSerializer,
     TransacaoSerializer,
 )
 
@@ -43,7 +47,10 @@ class DoUsuarioViewSet(viewsets.ModelViewSet):
         try:
             return super().destroy(request, *args, **kwargs)
         except ProtectedError:
-            return conflito('Não é possível apagar: existem transações ligadas a este registro.')
+            return conflito(
+                'Não é possível apagar: existem lançamentos ligados a este registro '
+                '(transações, compras ou recorrências).'
+            )
 
 
 class ContaViewSet(DoUsuarioViewSet):
@@ -134,6 +141,36 @@ class CompraViewSet(DoUsuarioViewSet):
         if compra_tem_parcela_paga(self.get_object()):
             return conflito('Esta compra tem parcela em fatura já paga e não pode ser apagada.')
         return super().destroy(request, *args, **kwargs)
+
+
+class RecorrenciaViewSet(DoUsuarioViewSet):
+    model = Recorrencia
+    serializer_class = RecorrenciaSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('conta', 'conta_destino', 'categoria')
+
+    @action(detail=False)
+    def previstas(self, request):
+        mes = ler_mes_ou_atual(request.query_params.get('mes'))
+        lista = recorrencias.previstas(request.user, mes)
+        return Response(PrevistaSerializer(lista, many=True, context={'mes': mes}).data)
+
+    @action(detail=True, methods=['post'])
+    def confirmar(self, request, pk=None):
+        recorrencia = self.get_object()
+        pedido = ConfirmarSerializer(
+            data=request.data, context={'request': request, 'recorrencia': recorrencia}
+        )
+        pedido.is_valid(raise_exception=True)
+        try:
+            transacao = recorrencias.confirmar(recorrencia, **pedido.validated_data)
+        except recorrencias.RecorrenciaJaConfirmada as erro:
+            return conflito(str(erro))
+        except recorrencias.ErroDeRecorrencia as erro:
+            raise ValidationError({'mes': [str(erro)]}) from None
+        dados = TransacaoSerializer(transacao, context={'request': request}).data
+        return Response(dados, status=status.HTTP_201_CREATED)
 
 
 class FaturaView(APIView):
