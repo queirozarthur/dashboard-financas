@@ -1,5 +1,8 @@
 export { Botao } from './Botao'
 export { estiloBotao } from './Botao.estilos'
+export { Campo, CampoData, CampoSelecao, CampoValor, type OpcaoDeSelecao } from './Campos'
+export { ControleSegmentado } from './ControleSegmentado'
+export { Folha } from './Folha'
 export { Indicador } from './Indicador'
 export { Grupo, Linha } from './ListaAgrupada'
 export { SeletorDeMes } from './SeletorDeMes'

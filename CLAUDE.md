@@ -130,12 +130,13 @@ Validações da `Transacao` (no serializer):
 - Tailwind com tokens semânticos (sem cor crua), `tv()` para variantes e `cn()` para classes condicionais. Componentes próprios; Radix só para comportamento acessível (Dialog, Select...). React Router, TanStack Query, Recharts, Vitest + Testing Library, vite-plugin-pwa, oxlint, Prettier. **zod** valida toda resposta da API (o tipo vem do esquema); **lucide-react** para ícones (SF Symbols não podem ser usados na web).
 - Valores: receita em verde com "+", despesa em cor normal com "−" (U+2212); vermelho só para alerta (saldo negativo, orçamento estourado). Componente `Valor` e função `apresentarValor`.
 - O mês escolhido fica na URL (`?mes=AAAA-MM`, hook `useMesSelecionado`).
+- Formulários: `Campo`, `CampoValor` (digitado a partir dos centavos, entrega texto `"12.34"`), `CampoData` e `CampoSelecao` como linhas de um `Grupo`. Data e seleção são **nativos** (no iPhone abrem o calendário e a roda do iOS); Radix só na `Folha`. `ControleSegmentado` usa rádios de verdade. A `Folha` fecha com Cancelar, Esc ou arrastando para baixo; no computador vira janela central.
 - **Todo token novo de tamanho de texto (`--text-*`) ou sombra (`--shadow-*`) no `index.css` precisa entrar em `CONFIG_DO_MERGE` (`core/utils/tailwind.ts`)**, senão o `cn()`/`tv()` o confunde com cor e o descarta. Usar sempre `tv` e `cn` de `@/core/utils`, nunca direto das bibliotecas.
 - **Visual "applenizado"** (estilo iOS): fonte do sistema (SF) no Apple e Inter nos outros; títulos grandes que encolhem ao rolar; listas agrupadas em blocos arredondados sobre fundo cinza claro; barra de abas embaixo translúcida com desfoque; formulários como bottom sheet; controle segmentado; números tabulares; resposta ao toque (scale) e animações com mola. **Só tema claro.** Cor principal verde-azulado; verde para receita e vermelho para despesa ficam reservados.
 - Sessão: access token só na memória; refresh no `localStorage` (trocar por cookie httpOnly antes de publicar na internet).
 - Dinheiro chega e volta como texto; só é formatado para exibir, nunca vira float. Nenhuma soma no frontend.
 - Gráficos seguem a skill `dataviz` (paleta validada pelo script, barras em vez de pizza).
-- Passos: T1 base ✓; T2 login e sessão ✓; T3a layout, navegação, título que encolhe, lista agrupada, valor e seletor de mês ✓; T3b campos, controle segmentado e folha (bottom sheet); T4 dashboard; T5 lançamentos; T6 contas e categorias; T7 cartão; T8 recorrências e orçamentos; T9 PWA.
+- Passos: T1 base ✓; T2 login e sessão ✓; T3a layout, navegação, título que encolhe, lista agrupada, valor e seletor de mês ✓; T3b campos, controle segmentado e folha (bottom sheet) ✓; T4 dashboard; T5 lançamentos; T6 contas e categorias; T7 cartão; T8 recorrências e orçamentos; T9 PWA.
 
 ## Ordem dos passos
 

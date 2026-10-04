@@ -65,6 +65,48 @@
     }
   }
 
+  /* Folha (bottom sheet): sobe com a curva das folhas do iOS; sai mais rápido.
+     No computador vira janela central, que aparece com um leve zoom. */
+  --animate-folha-entrar: folha-entrar 380ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-folha-sair: folha-sair 220ms ease-in forwards;
+  --animate-janela-entrar: janela-entrar 200ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-janela-sair: janela-sair 150ms ease-in forwards;
+  --animate-fundo-entrar: fundo-entrar 300ms ease-out;
+  --animate-fundo-sair: fundo-sair 200ms ease-in forwards;
+
+  @keyframes folha-entrar {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes folha-sair {
+    to {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes janela-entrar {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes janela-sair {
+    to {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+  @keyframes fundo-entrar {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fundo-sair {
+    to {
+      opacity: 0;
+    }
+  }
+
   --color-fundo: #f2f2f7; /* systemGroupedBackground */
   --color-superficie: #ffffff; /* blocos e cartões sobre o fundo */
   --color-conteudo: #1c1c1e; /* texto principal: 17:1 */

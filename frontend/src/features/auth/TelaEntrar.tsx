@@ -2,9 +2,8 @@ import type { FC, FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { z } from 'zod'
 
-import { Botao } from '@/core/ui'
+import { Botao, Campo, Grupo } from '@/core/ui'
 
-import { LinhaDeCampo } from './components/LinhaDeCampo'
 import { useSessao } from './hooks/contextoDaSessao'
 import { useEntrar } from './hooks/useEntrar'
 
@@ -39,9 +38,9 @@ export const TelaEntrar: FC = () => {
       <h1 className="px-4 text-titulo-grande font-bold tracking-tight">Entrar</h1>
       <p className="mt-1 px-4 text-conteudo-secundario">Suas finanças, num lugar só.</p>
 
-      <form className="mt-8" onSubmit={enviar}>
-        <div className="divide-y divide-separador overflow-hidden rounded-xl bg-superficie">
-          <LinhaDeCampo
+      <form className="mt-4" onSubmit={enviar}>
+        <Grupo>
+          <Campo
             autoCapitalize="none"
             autoComplete="username"
             autoCorrect="off"
@@ -50,7 +49,7 @@ export const TelaEntrar: FC = () => {
             required
             rotulo="Usuário"
           />
-          <LinhaDeCampo
+          <Campo
             autoComplete="current-password"
             name="senha"
             placeholder="obrigatória"
@@ -58,10 +57,10 @@ export const TelaEntrar: FC = () => {
             rotulo="Senha"
             type="password"
           />
-        </div>
+        </Grupo>
 
         {erro ? (
-          <p className="mt-3 px-4 text-sm text-despesa" role="alert">
+          <p className="mt-3 px-4 text-nota text-despesa" role="alert">
             {erro}
           </p>
         ) : null}

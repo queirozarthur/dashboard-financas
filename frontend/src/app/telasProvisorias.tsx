@@ -1,7 +1,20 @@
 import { LogOut } from 'lucide-react'
-import type { FC } from 'react'
+import { useState, type FC } from 'react'
 
-import { Grupo, Linha, SeletorDeMes, Tela, Valor } from '@/core/ui'
+import {
+  Botao,
+  Campo,
+  CampoData,
+  CampoSelecao,
+  CampoValor,
+  ControleSegmentado,
+  Folha,
+  Grupo,
+  Linha,
+  SeletorDeMes,
+  Tela,
+  Valor,
+} from '@/core/ui'
 import { useSessao } from '@/features/auth'
 
 // Provisórias do T3a: mostram o layout e os componentes. Cada uma é trocada pela tela
@@ -38,10 +51,89 @@ export const TelaLancamentos: FC = () => {
   )
 }
 
+type TipoDeExemplo = 'receita' | 'despesa' | 'transferencia'
+
+const TIPOS_DE_EXEMPLO = [
+  { valor: 'receita', rotulo: 'Receita' },
+  { valor: 'despesa', rotulo: 'Despesa' },
+  { valor: 'transferencia', rotulo: 'Transferência' },
+] as const
+
+const CONTAS_DE_EXEMPLO = [
+  { valor: '1', rotulo: 'Corrente' },
+  { valor: '2', rotulo: 'Carteira' },
+]
+
+// Estado local só porque é uma demonstração; o formulário do T5 terá o seu hook
 export const TelaNovo: FC = () => {
+  const [aberta, setAberta] = useState(false)
+  const [tipo, setTipo] = useState<TipoDeExemplo>('despesa')
+  const [valor, setValor] = useState('')
+  const [data, setData] = useState('2026-10-04')
+  const [conta, setConta] = useState('')
+
   return (
     <Tela titulo="Novo">
-      <p className="px-4 text-conteudo-secundario">O formulário de lançamento chega no T5.</p>
+      <p className="px-4 text-conteudo-secundario">
+        Demonstração dos componentes do formulário. Nada é salvo: o lançamento de verdade chega no
+        T5.
+      </p>
+      <Botao
+        className="mt-6"
+        largura="total"
+        onClick={() => {
+          setAberta(true)
+        }}
+      >
+        Abrir folha de exemplo
+      </Botao>
+
+      <Folha
+        acao={
+          <button
+            className="min-h-11 font-semibold text-marca outline-none disabled:opacity-40"
+            disabled={!valor}
+            onClick={() => {
+              setAberta(false)
+            }}
+            type="button"
+          >
+            Salvar
+          </button>
+        }
+        aberta={aberta}
+        aoMudarAberta={setAberta}
+        titulo="Novo lançamento"
+      >
+        <ControleSegmentado
+          aoMudar={setTipo}
+          nome="tipo-exemplo"
+          opcoes={TIPOS_DE_EXEMPLO}
+          rotulo="Tipo de lançamento"
+          valor={tipo}
+        />
+        <Grupo>
+          <CampoValor aoMudar={setValor} rotulo="Valor" valor={valor} />
+          <Campo placeholder="Opcional" rotulo="Descrição" />
+        </Grupo>
+        <Grupo>
+          <CampoData
+            onChange={(evento) => {
+              setData(evento.target.value)
+            }}
+            rotulo="Data"
+            value={data}
+          />
+          <CampoSelecao
+            onChange={(evento) => {
+              setConta(evento.target.value)
+            }}
+            opcoes={CONTAS_DE_EXEMPLO}
+            rotulo="Conta"
+            value={conta}
+          />
+        </Grupo>
+      </Folha>
     </Tela>
   )
 }
