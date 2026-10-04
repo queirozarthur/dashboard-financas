@@ -1,9 +1,10 @@
 import { Navigate, type RouteObject } from 'react-router'
 
 import { RotaProtegida, TelaEntrar } from '@/features/auth'
+import { TelaDashboard } from '@/features/dashboard'
 
 import { LayoutPrincipal } from './layout'
-import { TelaCartoes, TelaInicio, TelaLancamentos, TelaMais, TelaNovo } from './telasProvisorias'
+import { TelaCartoes, TelaLancamentos, TelaMais, TelaNovo } from './telasProvisorias'
 
 export const rotas: RouteObject[] = [
   { path: '/entrar', element: <TelaEntrar /> },
@@ -13,7 +14,7 @@ export const rotas: RouteObject[] = [
       {
         element: <LayoutPrincipal />,
         children: [
-          { index: true, element: <TelaInicio /> },
+          { index: true, element: <TelaDashboard /> },
           { path: 'lancamentos', element: <TelaLancamentos /> },
           { path: 'novo', element: <TelaNovo /> },
           { path: 'cartoes', element: <TelaCartoes /> },

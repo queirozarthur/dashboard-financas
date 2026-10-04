@@ -13,34 +13,11 @@ import {
   Linha,
   SeletorDeMes,
   Tela,
-  Valor,
 } from '@/core/ui'
 import { useSessao } from '@/features/auth'
 
-// Provisórias do T3a: mostram o layout e os componentes. Cada uma é trocada pela tela
-// de verdade no seu passo (T4 dashboard, T5 lançamentos, T6 contas, T7 cartão, T8 recorrências).
-
-export const TelaInicio: FC = () => {
-  return (
-    <Tela titulo="Início">
-      <SeletorDeMes />
-      <Grupo
-        rodape="Valores de exemplo. A dashboard de verdade chega no T4."
-        titulo="Resumo do mês"
-      >
-        <Linha rotulo="Receitas" valor={<Valor tom="receita" valor="5000.00" />} />
-        <Linha rotulo="Despesas" valor={<Valor tom="despesa" valor="3218.40" />} />
-        <Linha rotulo="Saldo da Carteira" valor={<Valor valor="-30.00" />} />
-      </Grupo>
-      {/* Conteúdo extra só para dar o que rolar e ver o título encolher */}
-      <Grupo titulo="Para testar a rolagem">
-        {Array.from({ length: 12 }, (_, indice) => {
-          return <Linha key={indice} detalhe="Detalhe da linha" rotulo={`Linha ${indice + 1}`} />
-        })}
-      </Grupo>
-    </Tela>
-  )
-}
+// Provisórias: cada uma é trocada pela tela de verdade no seu passo
+// (T5 lançamentos, T6 contas, T7 cartão, T8 recorrências).
 
 export const TelaLancamentos: FC = () => {
   return (

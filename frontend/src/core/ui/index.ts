@@ -1,3 +1,4 @@
+export { AvisoDeErro } from './AvisoDeErro'
 export { Botao } from './Botao'
 export { estiloBotao } from './Botao.estilos'
 export { Campo, CampoData, CampoSelecao, CampoValor, type OpcaoDeSelecao } from './Campos'
