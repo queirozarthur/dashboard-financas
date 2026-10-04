@@ -31,6 +31,40 @@
     0 0 0 1px rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.08),
     0 12px 32px -8px rgb(0 0 0 / 0.12);
 
+  /* Troca do nome do mês: o novo entra pelo lado da seta e o antigo sai pelo outro.
+     Saída mais curta e discreta que a entrada; curva sem ultrapassar o ponto final. */
+  --animate-mes-entrar-avancar: mes-entrar-avancar 260ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-mes-entrar-voltar: mes-entrar-voltar 260ms cubic-bezier(0.2, 0, 0, 1);
+  --animate-mes-sair-avancar: mes-sair-avancar 180ms ease-in forwards;
+  --animate-mes-sair-voltar: mes-sair-voltar 180ms ease-in forwards;
+
+  @keyframes mes-entrar-avancar {
+    from {
+      opacity: 0;
+      transform: translateX(24px);
+      filter: blur(4px);
+    }
+  }
+  @keyframes mes-entrar-voltar {
+    from {
+      opacity: 0;
+      transform: translateX(-24px);
+      filter: blur(4px);
+    }
+  }
+  @keyframes mes-sair-avancar {
+    to {
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+  }
+  @keyframes mes-sair-voltar {
+    to {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+  }
+
   --color-fundo: #f2f2f7; /* systemGroupedBackground */
   --color-superficie: #ffffff; /* blocos e cartões sobre o fundo */
   --color-conteudo: #1c1c1e; /* texto principal: 17:1 */

@@ -81,6 +81,29 @@ describe('SeletorDeMes', () => {
     expect(screen.getByText('Março de 2027')).toBeInTheDocument()
   })
 
+  it('ao abrir, o nome aparece parado (sem animação)', () => {
+    comRoteador(<SeletorDeMes />, '/?mes=2026-10')
+    expect(screen.getByText('Outubro de 2026').className).not.toMatch(/animate-mes-/)
+  })
+
+  it('avançar: o nome antigo sai para a esquerda e o novo entra pela direita', async () => {
+    comRoteador(<SeletorDeMes />, '/?mes=2026-10')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Próximo mês' }))
+
+    const saindo = screen.getByText('Outubro de 2026')
+    expect(saindo).toHaveClass('animate-mes-sair-avancar')
+    expect(saindo).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByText('Novembro de 2026')).toHaveClass('animate-mes-entrar-avancar')
+  })
+
+  it('voltar anima no sentido contrário', async () => {
+    comRoteador(<SeletorDeMes />, '/?mes=2026-10')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Mês anterior' }))
+
+    expect(screen.getByText('Outubro de 2026')).toHaveClass('animate-mes-sair-voltar')
+    expect(screen.getByText('Setembro de 2026')).toHaveClass('animate-mes-entrar-voltar')
+  })
+
   it('mantém os outros parâmetros da URL ao trocar o mês', async () => {
     const roteador = comRoteador(<SeletorDeMes />, '/?mes=2026-10&conta=3')
     await userEvent.setup().click(screen.getByRole('button', { name: 'Próximo mês' }))

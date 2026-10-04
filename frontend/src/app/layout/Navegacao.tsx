@@ -30,7 +30,7 @@ export const Navegacao: FC = () => {
                 end={'exata' in aba}
                 to={para}
               >
-                <Icone aria-hidden="true" className="size-6 md:size-5" strokeWidth={1.75} />
+                <Icone aria-hidden="true" className="size-5" strokeWidth={1.75} />
                 {rotulo}
               </NavLink>
             </li>
