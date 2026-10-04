@@ -68,6 +68,16 @@ class TransacaoViewSet(DoUsuarioViewSet):
     serializer_class = TransacaoSerializer
     pagination_class = PaginacaoTransacoes
 
+    def destroy(self, request, *args, **kwargs):
+        transacao = self.get_object()
+        if transacao.compra_id:
+            return Response(
+                {'detail': f'Esta transação é parcela de uma compra no cartão. '
+                           f'Apague a compra inteira em /api/compras/{transacao.compra_id}/.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return super().destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         transacoes = super().get_queryset().select_related('conta', 'conta_destino', 'categoria')
         if self.action != 'list':

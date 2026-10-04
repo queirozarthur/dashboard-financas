@@ -167,3 +167,74 @@ class TestesListarEApagarCompra(BaseCompras):
         self.comprar()
         resposta = self.client.get('/api/dashboard/?mes=2026-11')
         self.assertEqual(resposta.data['despesas'], '33.34')
+
+
+class TestesParcelasPelaRotaDeTransacoes(BaseCompras):
+    """Parcelas só nascem e morrem pela compra; a rota de transações não pode quebrar a soma."""
+
+    def setUp(self):
+        super().setUp()
+        self.compra = self.comprar()
+        self.parcela = self.compra.parcelas_geradas.get(numero_parcela=2)
+        self.rota = f'/api/transacoes/{self.parcela.id}/'
+
+    def test_parcela_mostra_compra_e_numero(self):
+        dados = self.client.get(self.rota).data
+        self.assertEqual(dados['compra'], self.compra.id)
+        self.assertEqual(dados['numero_parcela'], 2)
+
+    def test_editar_parcela_sozinha_e_recusado(self):
+        resposta = self.client.patch(self.rota, {'valor': '1.00'})
+        self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
+        self.parcela.refresh_from_db()
+        self.assertEqual(self.parcela.valor, Decimal('33.33'))
+
+    def test_apagar_parcela_sozinha_responde_409(self):
+        resposta = self.client.delete(self.rota)
+        self.assertEqual(resposta.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn(f'/api/compras/{self.compra.id}/', resposta.data['detail'])
+        self.assertEqual(self.compra.parcelas_geradas.count(), 3)
+
+    def test_compra_e_numero_enviados_pelo_cliente_sao_ignorados(self):
+        resposta = self.client.post('/api/transacoes/', {
+            'tipo': 'despesa', 'valor': '10.00', 'data': '2026-10-05', 'conta': self.corrente.id,
+            'categoria': self.mercado.id, 'compra': self.compra.id, 'numero_parcela': 9,
+        })
+        self.assertEqual(resposta.status_code, status.HTTP_201_CREATED, resposta.data)
+        self.assertIsNone(resposta.data['compra'])
+        self.assertIsNone(resposta.data['numero_parcela'])
+
+    def test_transacao_comum_continua_editavel_e_apagavel(self):
+        comum = self.criar_despesa('10.00')
+        rota = f'/api/transacoes/{comum.id}/'
+        self.assertEqual(self.client.patch(rota, {'valor': '12.00'}).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.delete(rota).status_code, status.HTTP_204_NO_CONTENT)
+
+
+class TestesLancamentoDiretoNoCartao(BaseCompras):
+    def postar(self, **campos):
+        dados = {'tipo': 'despesa', 'valor': '10.00', 'data': '2026-10-05',
+                 'conta': self.nubank.id, 'categoria': self.mercado.id, **campos}
+        return self.client.post('/api/transacoes/', dados)
+
+    def test_despesa_direto_no_cartao_e_recusada(self):
+        resposta = self.postar()
+        self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('conta', resposta.data)
+
+    def test_receita_direto_no_cartao_e_recusada(self):
+        resposta = self.postar(tipo='receita', categoria=self.salario.id)
+        self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('conta', resposta.data)
+
+    def test_mover_despesa_comum_para_o_cartao_e_recusado(self):
+        comum = self.criar_despesa('10.00')
+        resposta = self.client.patch(f'/api/transacoes/{comum.id}/', {'conta': self.nubank.id})
+        self.assertEqual(resposta.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('conta', resposta.data)
+
+    def test_transferencia_para_o_cartao_continua_permitida(self):
+        # É o caminho do pagamento da fatura, que o C3 vai validar
+        resposta = self.postar(tipo='transferencia', conta=self.corrente.id,
+                               conta_destino=self.nubank.id, categoria='')
+        self.assertEqual(resposta.status_code, status.HTTP_201_CREATED, resposta.data)

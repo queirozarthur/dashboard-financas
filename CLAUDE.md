@@ -89,7 +89,8 @@ Validações da `Transacao` (no serializer):
 
 - **Cartão é uma `Conta` com `tipo=cartao`**, com `dia_fechamento` e `dia_vencimento` (1–31; em mês mais curto vale o último dia). Saldo negativo = dívida.
 - **`Compra`** (usuario, cartao, categoria, descricao, valor_total, parcelas, data_compra) gera N `Transacao` do tipo `despesa` na conta do cartão, com `compra` e `numero_parcela`. A `data` de cada parcela é o **vencimento da fatura** em que ela cai, então a dashboard mostra cada parcela no mês da sua fatura.
-- Centavos da divisão vão na primeira parcela (100,00 em 3x = 33,34 + 33,33 + 33,33).
+- Centavos da divisão vão na primeira parcela (100,00 em 3x = 33,34 + 33,33 + 33,33). Máximo de 48 parcelas por compra.
+- No cartão, despesa entra só como compra (`/api/compras/`): `/api/transacoes/` recusa receita/despesa direto no cartão e não deixa editar nem apagar uma parcela sozinha (409 ao apagar).
 - Compra antes do dia de fechamento entra na fatura que fecha naquele mês; no dia do fechamento ou depois, na seguinte. O vencimento cai no mesmo mês do fechamento se `dia_vencimento > dia_fechamento`, senão no mês seguinte.
 - **Fatura é calculada, não armazenada:** parcelas do cartão com a mesma data de vencimento.
 - **Pagamento = transferência** da conta para o cartão (não é despesa). Só pagamento total: valor igual ao total da fatura, fatura já fechada, uma vez só. Parcelas de fatura paga não podem ser apagadas.

@@ -90,7 +90,10 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
             'categoria', 'categoria_nome',
+            'compra', 'numero_parcela',
         ]
+        # Parcelas nascem só por /api/compras/; aqui o cliente apenas enxerga o vínculo
+        read_only_fields = ['compra', 'numero_parcela']
 
     def get_fields(self):
         campos = super().get_fields()
@@ -108,6 +111,13 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         return valor
 
     def validate(self, dados):
+        # Mudar uma parcela sozinha faria a soma das parcelas deixar de bater com a compra
+        if self.instance and self.instance.compra_id:
+            raise serializers.ValidationError(
+                'Esta transação é parcela de uma compra no cartão. '
+                'Para corrigir, apague a compra e lance de novo.'
+            )
+
         # Num PATCH só chegam os campos alterados; o resto vem do objeto salvo
         def atual(campo):
             return dados.get(campo, getattr(self.instance, campo, None))
@@ -135,6 +145,9 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
                 )
             if conta_destino is not None:
                 erros['conta_destino'] = 'Só transferência tem conta de destino.'
+            # No cartão, a despesa precisa cair na fatura certa: isso só a compra calcula
+            if conta is not None and conta.e_cartao:
+                erros['conta'] = 'No cartão, lance a despesa como compra em /api/compras/.'
 
         if erros:
             raise serializers.ValidationError(erros)
