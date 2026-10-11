@@ -20,6 +20,8 @@ export const esquemaTransacao = z.object({
   categoria_icone: esquemaIcone.nullable(),
   compra: z.number().nullable(),
   numero_parcela: z.number().nullable(),
+  /** Total de parcelas da compra, para mostrar "3/10" */
+  parcelas_da_compra: z.number().nullable(),
   fatura_paga: z.string().nullable(),
   recorrencia: z.number().nullable(),
   competencia: z.string().nullable(),

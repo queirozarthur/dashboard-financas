@@ -70,7 +70,9 @@ const ConteudoDaFolha: FC<ConteudoDaFolhaProps> = ({ titulo, acao, aoFechar, chi
           aria-hidden="true"
           className="mx-auto mt-2 h-1.5 w-9 rounded-full bg-separador md:hidden"
         />
-        <div className="grid grid-cols-3 items-center px-4 py-1.5 md:pt-3">
+        {/* Título no meio com a largura que precisa; os lados dividem o resto por igual,
+            então ele continua centrado. Três colunas iguais cortavam "Novo lançamento" */}
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 py-1.5 md:pt-3">
           <Dialog.Close asChild>
             <button
               className="min-h-11 justify-self-start text-marca outline-none focus-visible:underline"

@@ -24,3 +24,20 @@ const formatoComAno = new Intl.DateTimeFormat('pt-BR', {
 export const dataPorExtenso = (texto: string, { comAno = false } = {}): string => {
   return (comAno ? formatoComAno : formatoSemAno).format(lerData(texto))
 }
+
+const formatoCurto = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' })
+const formatoNumerico = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+})
+
+/** "14 de ago.": para a linha de baixo das listas, onde o mês inteiro não cabe no celular. */
+export const dataCurta = (texto: string): string => {
+  return formatoCurto.format(lerData(texto))
+}
+
+/** "05/09/2026": datas de anos diferentes lado a lado (parcelas de uma compra). */
+export const dataNumerica = (texto: string): string => {
+  return formatoNumerico.format(lerData(texto))
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { detalheDoLancamento, tituloDoLancamento } from './apresentacao'
+import { detalheDoLancamento, numeroDaParcela, tituloDoLancamento } from './apresentacao'
 import type { Transacao } from './consts/esquemas'
 
 const base: Transacao = {
@@ -19,6 +19,7 @@ const base: Transacao = {
   categoria_icone: 'carrinho',
   compra: null,
   numero_parcela: null,
+  parcelas_da_compra: null,
   fatura_paga: null,
   recorrencia: null,
   competencia: null,
@@ -55,9 +56,13 @@ describe('detalheDoLancamento', () => {
     expect(detalheDoLancamento(pagamentoDeFatura)).toBe('Corrente → Nubank')
   })
 
-  it('parcela ganha o número', () => {
-    expect(detalheDoLancamento({ ...base, numero_parcela: 3 })).toBe(
-      'Mercado · Corrente · parcela 3',
-    )
+  it('categoria e conta; o número da parcela fica à parte, para ir embaixo do valor', () => {
+    const parcela = { ...base, compra: 9, numero_parcela: 3, parcelas_da_compra: 12 }
+    expect(detalheDoLancamento(parcela)).toBe('Mercado · Corrente')
+    expect(numeroDaParcela(parcela)).toBe('3/12')
+    expect(numeroDaParcela(base)).toBeNull()
+    expect(
+      numeroDaParcela({ ...base, compra: 9, numero_parcela: 1, parcelas_da_compra: 1 }),
+    ).toBeNull()
   })
 })

@@ -1,22 +1,21 @@
 import type { FC } from 'react'
 
-import { Grupo, Linha, Valor } from '@/core/ui'
-import { cn, dataPorExtenso, lerData, mesDe, nomeDoMes } from '@/core/utils'
+import { Grupo, Linha, ValorComNota } from '@/core/ui'
+import { cn, dataCurta, lerData, mesDe, nomeDoMes } from '@/core/utils'
 
 import type { ParcelaSimulada } from '../consts/esquemas'
 
 type DetalheDaParcelaProps = {
   parcela: ParcelaSimulada
-  parcelada: boolean
 }
 
-const DetalheDaParcela: FC<DetalheDaParcelaProps> = ({ parcela, parcelada }) => {
+const DetalheDaParcela: FC<DetalheDaParcelaProps> = ({ parcela }) => {
   if (parcela.fatura_paga) {
     // Alerta com texto, não só com cor
     return <span className="text-despesa">Esta fatura já foi paga</span>
   }
-  const vence = `vence em ${dataPorExtenso(parcela.vencimento)}`
-  return <>{parcelada ? `Parcela ${parcela.numero} · ${vence}` : vence}</>
+  // O mês e o ano já estão no título da linha
+  return <>Vence em {dataCurta(parcela.vencimento)}</>
 }
 
 type PreviaDasParcelasProps = {
@@ -51,10 +50,16 @@ export const PreviaDasParcelas: FC<PreviaDasParcelasProps> = ({ parcelas, atuali
         {parcelas.map((parcela) => {
           return (
             <Linha
-              detalhe={<DetalheDaParcela parcela={parcela} parcelada={parcelada} />}
+              detalhe={<DetalheDaParcela parcela={parcela} />}
               key={parcela.numero}
               rotulo={nomeDoMes(mesDe(lerData(parcela.vencimento)))}
-              valor={<Valor valor={parcela.valor} />}
+              valor={
+                <ValorComNota
+                  nota={parcelada ? parcela.numero : null}
+                  rotuloDaNota="parcela"
+                  valor={parcela.valor}
+                />
+              }
             />
           )
         })}

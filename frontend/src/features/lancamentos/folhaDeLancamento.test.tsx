@@ -36,6 +36,7 @@ const FEIRA: Transacao = {
   categoria_icone: 'carrinho',
   compra: null,
   numero_parcela: null,
+  parcelas_da_compra: null,
   fatura_paga: null,
   recorrencia: null,
   competencia: null,
@@ -310,7 +311,8 @@ describe('compra no cartão', () => {
     await usuario.selectOptions(within(folha).getByLabelText('Parcelas'), '3x')
 
     const novembro = await within(folha).findByText('Novembro de 2026')
-    expect(novembro.closest('li')).toHaveTextContent('Parcela 1/3 · vence em 5 de novembro')
+    expect(novembro.closest('li')).toHaveTextContent('Vence em 5 de nov.')
+    expect(novembro.closest('li')).toHaveTextContent('parcela 1/3')
     expect(within(folha).getByText('Janeiro de 2027')).toBeInTheDocument()
     expect(within(folha).getByRole('heading', { name: 'Faturas das parcelas' })).toBeInTheDocument()
   })

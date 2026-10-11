@@ -182,6 +182,18 @@ class TestesParcelasPelaRotaDeTransacoes(BaseCompras):
         dados = self.client.get(self.rota).data
         self.assertEqual(dados['compra'], self.compra.id)
         self.assertEqual(dados['numero_parcela'], 2)
+        self.assertEqual(dados['parcelas_da_compra'], 3)
+
+    def test_transacao_comum_nao_tem_parcelas(self):
+        dados = self.client.get(f'/api/transacoes/{self.criar_despesa("10.00").id}/').data
+        self.assertIsNone(dados['parcelas_da_compra'])
+
+    def test_listagem_com_parcelas_nao_tem_n_mais_1(self):
+        for _ in range(3):
+            self.comprar(parcelas=12)
+        # Contagem da paginação + transações com contas, categoria e compra num JOIN só
+        with self.assertNumQueries(2):
+            self.client.get('/api/transacoes/')
 
     def test_editar_parcela_sozinha_e_recusado(self):
         resposta = self.client.patch(self.rota, {'valor': '1.00'})

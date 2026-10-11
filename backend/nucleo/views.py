@@ -105,7 +105,9 @@ class TransacaoViewSet(DoUsuarioViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
-        transacoes = super().get_queryset().select_related('conta', 'conta_destino', 'categoria')
+        transacoes = super().get_queryset().select_related(
+            'conta', 'conta_destino', 'categoria', 'compra'
+        )
         if self.action != 'list':
             return transacoes
 

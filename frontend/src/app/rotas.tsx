@@ -6,7 +6,7 @@ import { TelaDashboard } from '@/features/dashboard'
 import { TelaLancamentos } from '@/features/lancamentos'
 
 import { LayoutPrincipal } from './layout'
-import { TelaCartoes, TelaMais } from './telasProvisorias'
+import { TelaCartoesComLancamento, TelaMais } from './telas'
 
 export const rotas: RouteObject[] = [
   { path: '/entrar', element: <TelaEntrar /> },
@@ -18,7 +18,7 @@ export const rotas: RouteObject[] = [
         children: [
           { index: true, element: <TelaDashboard /> },
           { path: 'lancamentos', element: <TelaLancamentos /> },
-          { path: 'cartoes', element: <TelaCartoes /> },
+          { path: 'cartoes', element: <TelaCartoesComLancamento /> },
           { path: 'mais', element: <TelaMais /> },
           // Dentro de /mais: a aba "Mais" continua acesa, como no iPhone
           { path: 'mais/contas', element: <TelaContas /> },

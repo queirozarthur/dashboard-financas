@@ -8,18 +8,19 @@ import { requisitar } from './cliente'
 // Contas e categorias aparecem em várias telas (lançamentos, cadastros, cartão):
 // por isso moram no core, e não dentro de uma feature
 
-const dinheiro = z.string().regex(/^-?\d+\.\d{2}$/)
+/** Dinheiro como a API manda: texto com duas casas ("1500.00", "-30.00"), nunca número. */
+export const esquemaDinheiro = z.string().regex(/^-?\d+\.\d{2}$/)
 
 export const esquemaConta = z.object({
   id: z.number(),
   nome: z.string(),
   tipo: z.enum(['corrente', 'dinheiro', 'investimento', 'cartao']),
-  saldo_inicial: dinheiro,
+  saldo_inicial: esquemaDinheiro,
   dia_fechamento: z.number().nullable(),
   dia_vencimento: z.number().nullable(),
   cor: esquemaCor,
   icone: esquemaIcone,
-  saldo: dinheiro,
+  saldo: esquemaDinheiro,
 })
 
 export const esquemaCategoria = z.object({

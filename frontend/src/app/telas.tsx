@@ -3,15 +3,20 @@ import type { FC } from 'react'
 
 import { Grupo, IconeColorido, Linha, Tela } from '@/core/ui'
 import { useSessao } from '@/features/auth'
+import { TelaCartoes } from '@/features/cartoes'
+import { useAbrirLancamento } from '@/features/lancamentos'
 
-// Provisórias: cada uma é trocada pela tela de verdade no seu passo
-// (T7 cartão, T8 recorrências e orçamentos).
+// Telas montadas pelo app: juntam peças de features diferentes, que não se importam entre si
 
-export const TelaCartoes: FC = () => {
+/** A aba Cartões com o ＋ ligado à folha de lançamento: uma despesa nova no cartão escolhido. */
+export const TelaCartoesComLancamento: FC = () => {
+  const { abrirNovo } = useAbrirLancamento()
   return (
-    <Tela titulo="Cartões">
-      <p className="px-4 text-conteudo-secundario">Faturas e compras chegam no T7.</p>
-    </Tela>
+    <TelaCartoes
+      aoNovaCompra={(cartao) => {
+        abrirNovo({ tipo: 'despesa', conta: String(cartao) })
+      }}
+    />
   )
 }
 

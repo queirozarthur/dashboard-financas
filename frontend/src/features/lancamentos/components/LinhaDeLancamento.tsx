@@ -1,9 +1,9 @@
 import { ArrowLeftRight } from 'lucide-react'
 import type { FC } from 'react'
 
-import { IconeColorido, IconeDoCadastro, Linha, Valor } from '@/core/ui'
+import { IconeColorido, IconeDoCadastro, Linha, ValorComNota } from '@/core/ui'
 
-import { detalheDoLancamento, tituloDoLancamento } from '../apresentacao'
+import { detalheDoLancamento, numeroDaParcela, tituloDoLancamento } from '../apresentacao'
 import type { Transacao } from '../consts/esquemas'
 import { motivoSomenteLeitura } from '../formulario'
 import { useAbrirLancamento } from '../hooks/contextoDoLancamento'
@@ -51,7 +51,14 @@ export const LinhaDeLancamento: FC<LinhaDeLancamentoProps> = ({ transacao }) => 
       detalhe={detalheDoLancamento(transacao)}
       icone={<IconeDoLancamento transacao={transacao} />}
       rotulo={tituloDoLancamento(transacao)}
-      valor={<Valor tom={TOM[transacao.tipo]} valor={transacao.valor} />}
+      valor={
+        <ValorComNota
+          nota={numeroDaParcela(transacao)}
+          rotuloDaNota="parcela"
+          tom={TOM[transacao.tipo]}
+          valor={transacao.valor}
+        />
+      }
     />
   )
 }

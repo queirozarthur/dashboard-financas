@@ -24,3 +24,28 @@ export const Valor: FC<ValorProps> = ({ valor, tom = 'neutro', className }) => {
     <span className={cn('whitespace-nowrap tabular-nums', CORES[cor], className)}>{texto}</span>
   )
 }
+
+type ValorComNotaProps = ValorProps & {
+  /** Texto pequeno embaixo do valor (ex.: "3/10"); sem ele, fica só o valor */
+  nota: string | null
+  /** O que a nota é, lido só pelo leitor de tela (ex.: "parcela") */
+  rotuloDaNota?: string
+}
+
+/**
+ * Valor com uma nota embaixo, como as compras do Apple Card: libera a linha de baixo,
+ * à esquerda, que no celular não cabe tudo.
+ */
+export const ValorComNota: FC<ValorComNotaProps> = ({ nota, rotuloDaNota, ...valor }) => {
+  return (
+    <span className="flex flex-col items-end">
+      <Valor {...valor} />
+      {nota ? (
+        <span className="text-nota text-conteudo-secundario tabular-nums">
+          {rotuloDaNota ? <span className="sr-only">{rotuloDaNota} </span> : null}
+          {nota}
+        </span>
+      ) : null}
+    </span>
+  )
+}

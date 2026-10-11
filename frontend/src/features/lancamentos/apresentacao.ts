@@ -11,14 +11,19 @@ export const tituloDoLancamento = (transacao: Transacao): string => {
   return transacao.categoria_nome ?? 'Transferência'
 }
 
-/** A linha de baixo: "Mercado · Corrente", "Corrente → Investimentos", "... · parcela 3". */
+/** A linha de baixo: "Mercado · Corrente" ou "Corrente → Investimentos". */
 export const detalheDoLancamento = (transacao: Transacao): string => {
   if (transacao.tipo === 'transferencia') {
     return `${transacao.conta_nome} → ${transacao.conta_destino_nome ?? ''}`
   }
-  const partes = [transacao.categoria_nome, transacao.conta_nome]
-  if (transacao.numero_parcela) {
-    partes.push(`parcela ${transacao.numero_parcela}`)
+  return [transacao.categoria_nome, transacao.conta_nome].filter(Boolean).join(' · ')
+}
+
+/** "3/10" embaixo do valor, nas parcelas de compras no cartão (à vista não tem número). */
+export const numeroDaParcela = (transacao: Transacao): string | null => {
+  const { numero_parcela: numero, parcelas_da_compra: total } = transacao
+  if (numero === null || total === null || total === 1) {
+    return null
   }
-  return partes.filter(Boolean).join(' · ')
+  return `${numero}/${total}`
 }

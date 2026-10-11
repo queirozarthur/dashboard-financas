@@ -1,6 +1,7 @@
 export {
   esquemaCategoria,
   esquemaConta,
+  esquemaDinheiro,
   useAtualizarDados,
   useCategorias,
   useContas,

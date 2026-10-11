@@ -123,6 +123,10 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
     # Para a lista mostrar o quadradinho colorido da categoria sem outra busca
     categoria_cor = serializers.CharField(source='categoria.cor', read_only=True, allow_null=True)
     categoria_icone = serializers.CharField(source='categoria.icone', read_only=True, allow_null=True)
+    # Para a lista mostrar "3/10": o número vem da parcela; o total, da compra
+    parcelas_da_compra = serializers.IntegerField(
+        source='compra.parcelas', read_only=True, allow_null=True
+    )
 
     class Meta:
         model = Transacao
@@ -131,7 +135,8 @@ class TransacaoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
             'categoria', 'categoria_nome', 'categoria_cor', 'categoria_icone',
-            'compra', 'numero_parcela', 'fatura_paga', 'recorrencia', 'competencia',
+            'compra', 'numero_parcela', 'parcelas_da_compra',
+            'fatura_paga', 'recorrencia', 'competencia',
         ]
         # Parcelas, pagamentos de fatura e confirmações têm rotas próprias;
         # aqui o cliente só enxerga o vínculo

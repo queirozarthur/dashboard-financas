@@ -48,6 +48,7 @@ const transacao: Transacao = {
   categoria_icone: null,
   compra: null,
   numero_parcela: null,
+  parcelas_da_compra: null,
   fatura_paga: null,
   recorrencia: null,
   competencia: null,

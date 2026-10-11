@@ -26,6 +26,7 @@ const base: Transacao = {
   categoria_icone: 'carrinho',
   compra: null,
   numero_parcela: null,
+  parcelas_da_compra: null,
   fatura_paga: null,
   recorrencia: null,
   competencia: null,
@@ -63,6 +64,7 @@ const SETEMBRO = [
     conta_nome: 'Nubank',
     compra: 9,
     numero_parcela: 3,
+    parcelas_da_compra: 12,
   }),
 ]
 
@@ -178,7 +180,9 @@ describe('TelaLancamentos', () => {
     expect(transferencia).toHaveTextContent('Corrente → Investimentos')
 
     const parcela = screen.getByText('Celular').closest('li')
-    expect(parcela).toHaveTextContent('Mercado · Nubank · parcela 3')
+    expect(parcela).toHaveTextContent('Mercado · Nubank')
+    // O número da parcela vai embaixo do valor
+    expect(parcela).toHaveTextContent('parcela 3/12')
   })
 
   it('pede o mês da URL', async () => {
