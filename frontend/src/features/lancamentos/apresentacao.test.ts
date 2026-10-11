@@ -46,8 +46,14 @@ describe('tituloDoLancamento', () => {
     expect(tituloDoLancamento(base)).toBe('Mercado')
   })
 
-  it('pagamento de fatura se apresenta como tal', () => {
+  it('pagamento de fatura se apresenta como tal, mesmo com a descrição do backend', () => {
     expect(tituloDoLancamento(pagamentoDeFatura)).toBe('Pagamento de fatura')
+    expect(
+      tituloDoLancamento({
+        ...pagamentoDeFatura,
+        descricao: 'Pagamento da fatura 2026-10 de Nubank',
+      }),
+    ).toBe('Pagamento de fatura')
   })
 })
 

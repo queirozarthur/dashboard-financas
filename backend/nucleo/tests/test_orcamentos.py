@@ -81,6 +81,13 @@ class TestesAPIDeOrcamentos(BaseOrcamentos):
         self.assertEqual(resposta.data['categoria_nome'], 'Mercado')
         self.assertEqual(Orcamento.objects.get().usuario, self.ana)
 
+    def test_traz_cor_e_icone_da_categoria(self):
+        self.mercado.cor, self.mercado.icone = 'verde', 'carrinho'
+        self.mercado.save()
+        self.criar()
+        orcamento = self.client.get('/api/orcamentos/?mes=2026-05').data[0]
+        self.assertEqual((orcamento['categoria_cor'], orcamento['categoria_icone']), ('verde', 'carrinho'))
+
     def test_validacoes(self):
         casos = {
             'categoria de receita': ({'categoria': self.salario.id}, 'categoria'),

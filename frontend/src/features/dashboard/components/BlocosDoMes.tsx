@@ -18,11 +18,13 @@ export const GrupoEntradasESaidas: FC<BlocoProps> = ({ dados, nomeDoMesAnterior 
     <Grupo titulo="Entradas e saídas">
       <Linha
         detalhe={textoDaVariacao(dados.variacao.receitas, nomeDoMesAnterior)}
+        quebrarDetalhe
         rotulo="Receitas"
         valor={<Valor tom="receita" valor={dados.receitas} />}
       />
       <Linha
         detalhe={textoDaVariacao(dados.variacao.despesas, nomeDoMesAnterior)}
+        quebrarDetalhe
         rotulo="Despesas"
         valor={<Valor tom="despesa" valor={dados.despesas} />}
       />
@@ -35,16 +37,26 @@ export const GrupoPrevisto: FC<BlocoProps> = ({ dados, nomeDoMes }) => {
   if (!temValor(receitas) && !temValor(despesas)) {
     return null
   }
+  const paraConfirmar = `/lancamentos?mes=${dados.mes}`
   return (
     <Grupo
-      rodape="Recorrências que você ainda não confirmou neste mês."
+      rodape="Recorrências que você ainda não confirmou neste mês. Toque para confirmar."
       titulo={`Ainda previsto em ${nomeDoMes}`}
     >
+      {/* Levam à lista do mês, onde cada recorrência prevista é confirmada */}
       {temValor(receitas) ? (
-        <Linha rotulo="A receber" valor={<Valor tom="receita" valor={receitas} />} />
+        <Linha
+          para={paraConfirmar}
+          rotulo="A receber"
+          valor={<Valor tom="receita" valor={receitas} />}
+        />
       ) : null}
       {temValor(despesas) ? (
-        <Linha rotulo="A pagar" valor={<Valor tom="despesa" valor={despesas} />} />
+        <Linha
+          para={paraConfirmar}
+          rotulo="A pagar"
+          valor={<Valor tom="despesa" valor={despesas} />}
+        />
       ) : null}
     </Grupo>
   )

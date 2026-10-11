@@ -28,6 +28,8 @@ type LinhaProps = {
   rotulo: ReactNode
   /** Texto menor embaixo do rótulo */
   detalhe?: ReactNode
+  /** O detalhe quebra em mais linhas em vez de ser cortado (frases que importam inteiras) */
+  quebrarDetalhe?: boolean
   /** Conteúdo à direita (valor, contagem) */
   valor?: ReactNode
   icone?: ReactNode
@@ -52,7 +54,7 @@ const CLASSES_INTERATIVAS = 'transition-colors duration-150 active:bg-separador/
 
 const ConteudoDaLinha: FC<
   Omit<LinhaProps, 'para' | 'aoTocar' | 'acaoAoDeslizar'> & { comSeta: boolean }
-> = ({ rotulo, detalhe, valor, icone, tom = 'normal', comSeta }) => {
+> = ({ rotulo, detalhe, quebrarDetalhe = false, valor, icone, tom = 'normal', comSeta }) => {
   return (
     <>
       {icone ? <span className="shrink-0 text-marca">{icone}</span> : null}
@@ -61,7 +63,12 @@ const ConteudoDaLinha: FC<
         <span className="min-w-0 flex-1">
           <span className={cn('block truncate', tom === 'perigo' && 'text-despesa')}>{rotulo}</span>
           {detalhe ? (
-            <span className="block truncate text-subtitulo text-conteudo-secundario">
+            <span
+              className={cn(
+                'block text-subtitulo text-conteudo-secundario',
+                quebrarDetalhe ? 'text-pretty' : 'truncate',
+              )}
+            >
               {detalhe}
             </span>
           ) : null}

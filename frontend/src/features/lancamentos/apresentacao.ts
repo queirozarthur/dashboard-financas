@@ -2,11 +2,13 @@ import type { Transacao } from './consts/esquemas'
 
 /** O que a linha mostra em destaque: a descrição; sem ela, o que o lançamento é. */
 export const tituloDoLancamento = (transacao: Transacao): string => {
-  if (transacao.descricao) {
-    return transacao.descricao
-  }
+  // A descrição que o backend gera ("Pagamento da fatura 2026-10 de Nubank") não cabe no
+  // celular; a linha de baixo já diz de qual conta para qual cartão
   if (transacao.fatura_paga) {
     return 'Pagamento de fatura'
+  }
+  if (transacao.descricao) {
+    return transacao.descricao
   }
   return transacao.categoria_nome ?? 'Transferência'
 }

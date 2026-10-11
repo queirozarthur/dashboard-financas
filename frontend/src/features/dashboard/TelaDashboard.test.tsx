@@ -203,6 +203,11 @@ describe('TelaDashboard', () => {
     expect(previsto).not.toBeNull()
     expect(within(previsto!).getByText('A pagar')).toBeInTheDocument()
     expect(within(previsto!).queryByText('A receber')).not.toBeInTheDocument()
+    // Leva à lista do mês, onde cada previsto é confirmado
+    expect(within(previsto!).getByRole('link', { name: /A pagar/ })).toHaveAttribute(
+      'href',
+      '/lancamentos?mes=2026-10',
+    )
   })
 
   it('orçamento estourado avisa com texto, não só com cor', async () => {

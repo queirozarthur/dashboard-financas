@@ -53,6 +53,16 @@ class TestesCadastro(BaseRecorrenciasAPI):
     def test_sem_fim_vem_nulo(self):
         self.assertIsNone(self.criar().data['fim'])
 
+    def test_traz_cor_e_icone_da_categoria(self):
+        self.mercado.cor, self.mercado.icone = 'verde', 'carrinho'
+        self.mercado.save()
+        dados = self.criar().data
+        self.assertEqual((dados['categoria_cor'], dados['categoria_icone']), ('verde', 'carrinho'))
+        transferencia = self.criar(
+            descricao='Aporte', tipo='transferencia', categoria=None, conta_destino=self.carteira.id
+        ).data
+        self.assertIsNone(transferencia['categoria_cor'])
+
     def test_recorrencia_de_transferencia(self):
         resposta = self.criar(tipo='transferencia', categoria=None, conta_destino=self.carteira.id)
         self.assertEqual(resposta.status_code, status.HTTP_201_CREATED, resposta.data)
@@ -149,6 +159,13 @@ class TestesPrevistas(BaseRecorrenciasAPI):
         self.assertEqual(previstas[0]['data'], '2026-11-30')
         self.assertEqual(previstas[0]['valor'], '1500.00')
         self.assertEqual(previstas[0]['conta_nome'], 'Corrente')
+
+    def test_prevista_traz_cor_e_icone_da_categoria(self):
+        self.mercado.cor, self.mercado.icone = 'verde', 'carrinho'
+        self.mercado.save()
+        self.criar_recorrencia()
+        prevista = self.client.get('/api/recorrencias/previstas/?mes=2026-11').data[0]
+        self.assertEqual((prevista['categoria_cor'], prevista['categoria_icone']), ('verde', 'carrinho'))
 
     def test_confirmada_sai_da_lista(self):
         aluguel = self.criar_recorrencia()

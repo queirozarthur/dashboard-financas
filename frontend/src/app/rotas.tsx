@@ -1,7 +1,7 @@
 import { Navigate, type RouteObject } from 'react-router'
 
 import { RotaProtegida, TelaEntrar } from '@/features/auth'
-import { TelaCategorias, TelaContas } from '@/features/cadastros'
+import { TelaCategorias, TelaContas, TelaRecorrencias } from '@/features/cadastros'
 import { TelaDashboard } from '@/features/dashboard'
 import { TelaLancamentos } from '@/features/lancamentos'
 
@@ -23,6 +23,7 @@ export const rotas: RouteObject[] = [
           // Dentro de /mais: a aba "Mais" continua acesa, como no iPhone
           { path: 'mais/contas', element: <TelaContas /> },
           { path: 'mais/categorias', element: <TelaCategorias /> },
+          { path: 'mais/recorrencias', element: <TelaRecorrencias /> },
         ],
       },
     ],

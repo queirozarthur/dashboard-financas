@@ -4,7 +4,15 @@ export { ConfirmacaoDeExclusao } from './ConfirmacaoDeExclusao'
 export { Botao } from './Botao'
 export { BotaoDaBarra } from './BotaoDaBarra'
 export { estiloBotao } from './Botao.estilos'
-export { Campo, CampoData, CampoSelecao, CampoValor, type OpcaoDeSelecao } from './Campos'
+export {
+  Campo,
+  CampoData,
+  CampoInterruptor,
+  CampoMes,
+  CampoSelecao,
+  CampoValor,
+  type OpcaoDeSelecao,
+} from './Campos'
 export { ControleSegmentado } from './ControleSegmentado'
 export { Folha } from './Folha'
 export { IconeColorido, IconeDoCadastro } from './IconeColorido'

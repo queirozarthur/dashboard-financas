@@ -8,6 +8,7 @@ import { cn, nomeDoMes } from '@/core/utils'
 import { agruparPorDia } from './agrupamento'
 import { Filtros } from './components/Filtros'
 import { LinhaDeLancamento } from './components/LinhaDeLancamento'
+import { PrevistasDoMes } from './components/PrevistasDoMes'
 import { useFiltros } from './hooks/useFiltros'
 import { useTransacoes } from './hooks/useTransacoes'
 
@@ -118,6 +119,7 @@ export const TelaLancamentos: FC = () => {
         conta={filtros.conta}
         contas={contas.data ?? []}
       />
+      <PrevistasDoMes filtros={filtros} mes={mes} />
       {lista()}
     </Tela>
   )

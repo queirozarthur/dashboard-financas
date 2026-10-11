@@ -39,3 +39,9 @@ export const TIPOS_DE_CATEGORIA = [
   { valor: 'fixo', rotulo: 'Fixa' },
   { valor: 'variavel', rotulo: 'Variável' },
 ] as const
+
+export const TIPOS_DE_RECORRENCIA = [
+  { valor: 'receita', rotulo: 'Receita' },
+  { valor: 'despesa', rotulo: 'Despesa' },
+  { valor: 'transferencia', rotulo: 'Transferência' },
+] as const

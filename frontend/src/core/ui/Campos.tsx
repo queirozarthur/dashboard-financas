@@ -178,6 +178,67 @@ export const CampoData: FC<CampoDataProps> = ({ rotulo, erro, className, id, ...
   )
 }
 
+type CampoMesProps = ComponentProps<'input'> &
+  ComErro & {
+    rotulo: string
+  }
+
+/** Mês nativo, no formato da API ("2026-10"): no iPhone abre a roda de mês e ano. */
+export const CampoMes: FC<CampoMesProps> = ({ rotulo, erro, className, id, ...campo }) => {
+  const { idDoCampo, idDoErro, atributos } = useLigacoesDoCampo(erro, id)
+  return (
+    <LinhaDeFormulario erro={erro} idDoCampo={idDoCampo} idDoErro={idDoErro} rotulo={rotulo}>
+      <input
+        {...campo}
+        {...atributos}
+        className={cn(CLASSES_DO_CONTROLE, 'text-right tabular-nums', className)}
+        type="month"
+      />
+    </LinhaDeFormulario>
+  )
+}
+
+type CampoInterruptorProps = {
+  rotulo: string
+  ligado: boolean
+  aoMudar: (ligado: boolean) => void
+}
+
+/**
+ * Interruptor do iOS numa linha do grupo. Por baixo é um checkbox com role="switch": o
+ * leitor de tela anuncia "ligado" ou "desligado", e a linha inteira é clicável.
+ */
+export const CampoInterruptor: FC<CampoInterruptorProps> = ({ rotulo, ligado, aoMudar }) => {
+  return (
+    <li className="group/linha">
+      <label className="flex cursor-pointer items-center pl-4">
+        <span className="flex min-h-11 min-w-0 flex-1 items-center gap-3 border-separador py-1.5 pr-4 group-not-first/linha:border-t">
+          <span className="flex-1">{rotulo}</span>
+          <input
+            checked={ligado}
+            className="peer sr-only"
+            onChange={(evento) => {
+              aoMudar(evento.target.checked)
+            }}
+            role="switch"
+            type="checkbox"
+          />
+          {/* Trilho e bolinha: só visuais, o estado de verdade é o do checkbox */}
+          <span
+            aria-hidden="true"
+            className={cn(
+              'relative h-7.5 w-12.5 shrink-0 rounded-full bg-separador/60 transition-colors duration-200',
+              'peer-checked:bg-marca peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-marca',
+              'after:absolute after:top-0.5 after:left-0.5 after:size-6.5 after:rounded-full after:bg-superficie after:shadow-flutuante',
+              'after:transition-transform after:duration-200 peer-checked:after:translate-x-5 motion-reduce:after:transition-none',
+            )}
+          />
+        </span>
+      </label>
+    </li>
+  )
+}
+
 export type OpcaoDeSelecao = {
   valor: string
   rotulo: string

@@ -43,3 +43,17 @@ export const nomeDoMes = ({ ano, numero }: Mes, { semAno = false } = {}): string
   const data = new Date(ano, numero - 1, 1)
   return maiuscula((semAno ? formatoNomeCurto : formatoNome).format(data))
 }
+
+const formatoCurto = new Intl.DateTimeFormat('pt-BR', { month: 'short', year: 'numeric' })
+
+/** "12/2026": cabe embaixo de um valor. Aceita o texto da API ("2026-12"). */
+export const mesNumerico = (texto: string): string => {
+  const mes = lerMes(texto)
+  return mes ? `${String(mes.numero).padStart(2, '0')}/${mes.ano}` : texto
+}
+
+/** "dez. de 2026": para a linha de baixo das listas. Aceita o texto da API ("2026-12"). */
+export const mesCurto = (texto: string): string => {
+  const mes = lerMes(texto)
+  return mes ? formatoCurto.format(new Date(mes.ano, mes.numero - 1, 1)) : texto
+}

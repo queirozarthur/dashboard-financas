@@ -68,6 +68,9 @@ const CHAVES_DOS_DADOS = [
   'faturas',
   'compras',
   'simulacao',
+  'recorrencias',
+  'previstas',
+  'orcamentos',
 ]
 
 /** Depois de salvar ou apagar qualquer coisa: as telas buscam de novo o que pode ter mudado. */

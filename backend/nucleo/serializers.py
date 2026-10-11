@@ -394,6 +394,8 @@ class RecorrenciaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         source='conta_destino.nome', read_only=True, allow_null=True
     )
     categoria_nome = serializers.CharField(source='categoria.nome', read_only=True, allow_null=True)
+    categoria_cor = serializers.CharField(source='categoria.cor', read_only=True, allow_null=True)
+    categoria_icone = serializers.CharField(source='categoria.icone', read_only=True, allow_null=True)
     inicio = CampoMes()
     fim = CampoMes(required=False, allow_null=True)
 
@@ -403,7 +405,7 @@ class RecorrenciaSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             'id', 'descricao', 'tipo', 'valor', 'dia', 'inicio', 'fim',
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
-            'categoria', 'categoria_nome',
+            'categoria', 'categoria_nome', 'categoria_cor', 'categoria_icone',
         ]
         extra_kwargs = {'dia': {'min_value': 1, 'max_value': 31}}
 
@@ -437,6 +439,8 @@ class PrevistaSerializer(serializers.ModelSerializer):
     conta_nome = serializers.CharField(source='conta.nome')
     conta_destino_nome = serializers.CharField(source='conta_destino.nome', allow_null=True)
     categoria_nome = serializers.CharField(source='categoria.nome', allow_null=True)
+    categoria_cor = serializers.CharField(source='categoria.cor', allow_null=True)
+    categoria_icone = serializers.CharField(source='categoria.icone', allow_null=True)
 
     class Meta:
         model = Recorrencia
@@ -444,7 +448,7 @@ class PrevistaSerializer(serializers.ModelSerializer):
             'recorrencia', 'descricao', 'tipo', 'valor', 'data',
             'conta', 'conta_nome',
             'conta_destino', 'conta_destino_nome',
-            'categoria', 'categoria_nome',
+            'categoria', 'categoria_nome', 'categoria_cor', 'categoria_icone',
         ]
 
     def get_data(self, recorrencia):
@@ -485,11 +489,15 @@ class ConfirmarSerializer(DoUsuarioMixin, serializers.Serializer):
 
 class OrcamentoSerializer(DoUsuarioMixin, serializers.ModelSerializer):
     categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
+    categoria_cor = serializers.CharField(source='categoria.cor', read_only=True)
+    categoria_icone = serializers.CharField(source='categoria.icone', read_only=True)
     inicio = CampoMes()
 
     class Meta:
         model = Orcamento
-        fields = ['id', 'categoria', 'categoria_nome', 'valor', 'inicio']
+        fields = [
+            'id', 'categoria', 'categoria_nome', 'categoria_cor', 'categoria_icone', 'valor', 'inicio',
+        ]
         # Sem o validador automático da UniqueConstraint: ele responderia em non_field_errors;
         # o validate() abaixo aponta o erro no campo `inicio`
         validators = []

@@ -12,6 +12,16 @@ export {
 export { cn } from './cn'
 export { dataCurta, dataDeHoje, dataNumerica, dataPorExtenso, lerData } from './data'
 export { apresentarValor, formatarDinheiro, type TomDoValor } from './dinheiro'
-export { lerMes, mesDe, mesmoMes, nomeDoMes, somarMeses, textoDoMes, type Mes } from './mes'
+export {
+  lerMes,
+  mesCurto,
+  mesNumerico,
+  mesDe,
+  mesmoMes,
+  nomeDoMes,
+  somarMeses,
+  textoDoMes,
+  type Mes,
+} from './mes'
 export { tv } from './tailwind'
 export { decimalParaDigitos, digitosParaDecimal, MAXIMO_DE_DIGITOS } from './valor'

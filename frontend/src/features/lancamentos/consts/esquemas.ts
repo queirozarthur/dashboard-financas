@@ -54,3 +54,23 @@ export const esquemaCompraCriada = z.object({ id: z.number() })
 
 export type Simulacao = z.infer<typeof esquemaSimulacao>
 export type ParcelaSimulada = Simulacao['parcelas'][number]
+
+// GET /api/recorrencias/previstas/?mes=: recorrências do mês ainda sem lançamento confirmado
+export const esquemaPrevista = z.object({
+  recorrencia: z.number(),
+  descricao: z.string(),
+  tipo: z.enum(['receita', 'despesa', 'transferencia']),
+  valor: dinheiro,
+  /** Data sugerida: o dia da recorrência naquele mês */
+  data: z.string(),
+  conta: z.number(),
+  conta_nome: z.string(),
+  conta_destino: z.number().nullable(),
+  conta_destino_nome: z.string().nullable(),
+  categoria: z.number().nullable(),
+  categoria_nome: z.string().nullable(),
+  categoria_cor: esquemaCor.nullable(),
+  categoria_icone: esquemaIcone.nullable(),
+})
+
+export type Prevista = z.infer<typeof esquemaPrevista>
