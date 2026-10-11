@@ -17,6 +17,7 @@ from .cartao import (
     compra_tem_parcela_paga,
     montar_fatura,
     pagar_fatura,
+    simular_compra,
 )
 from .models import Categoria, Compra, Conta, Orcamento, Recorrencia, Transacao
 from .orcamentos import vigentes
@@ -29,8 +30,10 @@ from .serializers import (
     FaturaSerializer,
     OrcamentoSerializer,
     PagarFaturaSerializer,
+    ParcelaSimuladaSerializer,
     PrevistaSerializer,
     RecorrenciaSerializer,
+    SimulacaoDaCompraSerializer,
     TransacaoSerializer,
 )
 
@@ -143,6 +146,14 @@ class CompraViewSet(DoUsuarioViewSet):
         if compra_tem_parcela_paga(self.get_object()):
             return conflito('Esta compra tem parcela em fatura já paga e não pode ser apagada.')
         return super().destroy(request, *args, **kwargs)
+
+    # Antes de salvar, a tela mostra em qual fatura cai cada parcela; a conta é a mesma da compra
+    @action(detail=False)
+    def simulacao(self, request):
+        pedido = SimulacaoDaCompraSerializer(data=request.query_params, context={'request': request})
+        pedido.is_valid(raise_exception=True)
+        parcelas = simular_compra(**pedido.validated_data)
+        return Response({'parcelas': ParcelaSimuladaSerializer(parcelas, many=True).data})
 
 
 class RecorrenciaViewSet(DoUsuarioViewSet):

@@ -13,8 +13,11 @@ import {
   type OpcaoDeSelecao,
 } from '@/core/ui'
 
+import { OPCOES_DE_PARCELAS } from '../consts/opcoes'
 import type { ControleDaFolha } from '../hooks/useControleDaFolha'
+import { useSimulacaoDaCompra } from '../hooks/useSimulacaoDaCompra'
 import { DetalhesSomenteLeitura } from './DetalhesSomenteLeitura'
+import { PreviaDasParcelas } from './PreviaDasParcelas'
 
 const TIPOS = [
   { valor: 'receita', rotulo: 'Receita' },
@@ -26,11 +29,30 @@ const comoOpcao = (item: Conta | Categoria): OpcaoDeSelecao => {
   return { valor: String(item.id), rotulo: item.nome }
 }
 
-// Cartão fica de fora: lá a despesa entra como compra (aba Cartões)
-const contasLivres = (contas: readonly Conta[]): Conta[] => {
-  return contas.filter((conta) => {
-    return conta.tipo !== 'cartao'
+const ehCartao = (conta: Conta): boolean => {
+  return conta.tipo === 'cartao'
+}
+
+/**
+ * Receita e transferência não passam pelo cartão. Na despesa nova, os cartões aparecem num
+ * grupo à parte: escolher um deles transforma o lançamento numa compra parcelável.
+ */
+const opcoesDeConta = (contas: readonly Conta[], comCartoes: boolean): OpcaoDeSelecao[] => {
+  const livres = contas.filter((conta) => {
+    return !ehCartao(conta)
   })
+  const cartoes = contas.filter(ehCartao)
+  if (!comCartoes || cartoes.length === 0) {
+    return livres.map(comoOpcao)
+  }
+  return [
+    ...livres.map((conta) => {
+      return { ...comoOpcao(conta), grupo: 'Contas' }
+    }),
+    ...cartoes.map((cartao) => {
+      return { ...comoOpcao(cartao), grupo: 'Cartões de crédito' }
+    }),
+  ]
 }
 
 const tituloDaFolha = ({ editando, somenteLeitura }: ControleDaFolha): string => {
@@ -48,15 +70,21 @@ export const FolhaDeLancamento: FC<FolhaDeLancamentoProps> = ({ controle }) => {
   const idDoFormulario = useId()
   const contas = useContas()
   const categorias = useCategorias()
-  const { formulario, erros, alterar, editando, somenteLeitura } = controle
+  const { formulario, erros, alterar, editando, somenteLeitura, compra } = controle
+  const simulacao = useSimulacaoDaCompra(formulario, compra)
 
   const enviar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault()
     controle.salvar()
   }
 
-  const opcoesDeConta = contasLivres(contas.data ?? []).map(comoOpcao)
-  const opcoesDeDestino = opcoesDeConta.filter((opcao) => {
+  const todasAsContas = contas.data ?? []
+  // Um lançamento salvo não vira compra: na edição, os cartões ficam de fora
+  const contasDoTipo = opcoesDeConta(
+    todasAsContas,
+    formulario.tipo === 'despesa' && editando === null,
+  )
+  const opcoesDeDestino = opcoesDeConta(todasAsContas, false).filter((opcao) => {
     return opcao.valor !== formulario.conta
   })
   const opcoesDeCategoria = (categorias.data ?? [])
@@ -105,7 +133,7 @@ export const FolhaDeLancamento: FC<FolhaDeLancamentoProps> = ({ controle }) => {
                 alterar('valor', valor)
               }}
               erro={erros.valor}
-              rotulo="Valor"
+              rotulo={compra ? 'Valor total' : 'Valor'}
               valor={formulario.valor}
             />
             <Campo
@@ -133,10 +161,21 @@ export const FolhaDeLancamento: FC<FolhaDeLancamentoProps> = ({ controle }) => {
               onChange={(evento) => {
                 alterar('conta', evento.target.value)
               }}
-              opcoes={opcoesDeConta}
+              opcoes={contasDoTipo}
               rotulo={formulario.tipo === 'transferencia' ? 'De' : 'Conta'}
               value={formulario.conta}
             />
+            {compra ? (
+              <CampoSelecao
+                erro={erros.parcelas}
+                onChange={(evento) => {
+                  alterar('parcelas', evento.target.value)
+                }}
+                opcoes={OPCOES_DE_PARCELAS}
+                rotulo="Parcelas"
+                value={formulario.parcelas}
+              />
+            ) : null}
             {formulario.tipo === 'transferencia' ? (
               <CampoSelecao
                 erro={erros.contaDestino}
@@ -159,6 +198,12 @@ export const FolhaDeLancamento: FC<FolhaDeLancamentoProps> = ({ controle }) => {
               />
             )}
           </Grupo>
+          {compra ? (
+            <PreviaDasParcelas
+              atualizando={simulacao.isPlaceholderData || simulacao.isFetching}
+              parcelas={simulacao.data?.parcelas}
+            />
+          ) : null}
           {editando ? (
             <ConfirmacaoDeExclusao
               apagando={controle.apagando}

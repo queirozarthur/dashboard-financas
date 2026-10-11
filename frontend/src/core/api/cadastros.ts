@@ -58,7 +58,16 @@ export const useCategorias = () => {
 }
 
 // Tudo que mostra dinheiro, nomes ou cores depende de lançamentos e cadastros
-const CHAVES_DOS_DADOS = ['transacoes', 'dashboard', 'evolucao', 'contas', 'categorias']
+const CHAVES_DOS_DADOS = [
+  'transacoes',
+  'dashboard',
+  'evolucao',
+  'contas',
+  'categorias',
+  'faturas',
+  'compras',
+  'simulacao',
+]
 
 /** Depois de salvar ou apagar qualquer coisa: as telas buscam de novo o que pode ter mudado. */
 export const useAtualizarDados = () => {

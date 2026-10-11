@@ -240,10 +240,15 @@ class ParcelaDaFaturaSerializer(ParcelaSerializer):
     data_pagamento = None
     descricao = serializers.CharField(source='compra.descricao')
     categoria_nome = serializers.CharField(source='categoria.nome')
+    categoria_cor = serializers.CharField(source='categoria.cor')
+    categoria_icone = serializers.CharField(source='categoria.icone')
     data_compra = serializers.DateField(source='compra.data_compra')
 
     class Meta(ParcelaSerializer.Meta):
-        fields = ['id', 'compra', 'descricao', 'categoria_nome', 'data_compra', 'numero', 'valor']
+        fields = [
+            'id', 'compra', 'descricao', 'categoria_nome', 'categoria_cor', 'categoria_icone',
+            'data_compra', 'numero', 'valor',
+        ]
 
 
 class PagamentoDaFaturaSerializer(serializers.Serializer):
@@ -280,38 +285,16 @@ class PagarFaturaSerializer(DoUsuarioMixin, serializers.Serializer):
         return campos
 
 
-class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
+class RegrasDaCompra:
+    """Validações que a compra e a simulação da compra compartilham."""
+
     # Limite contra um número absurdo de parcelas, que geraria milhares de transações
     MAXIMO_DE_PARCELAS = 48
-
-    cartao_nome = serializers.CharField(source='cartao.nome', read_only=True)
-    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
-    parcelas_geradas = ParcelaSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Compra
-        fields = [
-            'id', 'descricao', 'valor_total', 'parcelas', 'data_compra',
-            'cartao', 'cartao_nome',
-            'categoria', 'categoria_nome',
-            'parcelas_geradas',
-        ]
-
-    def get_fields(self):
-        campos = super().get_fields()
-        campos['cartao'].queryset = Conta.objects.filter(usuario=self.usuario)
-        campos['categoria'].queryset = Categoria.objects.filter(usuario=self.usuario)
-        return campos
 
     def validate_cartao(self, cartao):
         if not cartao.e_cartao:
             raise serializers.ValidationError('Compras só podem ser lançadas em conta do tipo cartão.')
         return cartao
-
-    def validate_categoria(self, categoria):
-        if categoria.natureza != Categoria.Natureza.DESPESA:
-            raise serializers.ValidationError('A compra precisa de uma categoria de despesa.')
-        return categoria
 
     def validate_valor_total(self, valor):
         if valor <= 0:
@@ -323,6 +306,34 @@ class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
             raise serializers.ValidationError(f'Informe de 1 a {self.MAXIMO_DE_PARCELAS} parcelas.')
         return parcelas
 
+
+class CompraSerializer(RegrasDaCompra, DoUsuarioMixin, serializers.ModelSerializer):
+    cartao_nome = serializers.CharField(source='cartao.nome', read_only=True)
+    categoria_nome = serializers.CharField(source='categoria.nome', read_only=True)
+    categoria_cor = serializers.CharField(source='categoria.cor', read_only=True)
+    categoria_icone = serializers.CharField(source='categoria.icone', read_only=True)
+    parcelas_geradas = ParcelaSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Compra
+        fields = [
+            'id', 'descricao', 'valor_total', 'parcelas', 'data_compra',
+            'cartao', 'cartao_nome',
+            'categoria', 'categoria_nome', 'categoria_cor', 'categoria_icone',
+            'parcelas_geradas',
+        ]
+
+    def get_fields(self):
+        campos = super().get_fields()
+        campos['cartao'].queryset = Conta.objects.filter(usuario=self.usuario)
+        campos['categoria'].queryset = Categoria.objects.filter(usuario=self.usuario)
+        return campos
+
+    def validate_categoria(self, categoria):
+        if categoria.natureza != Categoria.Natureza.DESPESA:
+            raise serializers.ValidationError('A compra precisa de uma categoria de despesa.')
+        return categoria
+
     def create(self, dados):
         # As parcelas nascem junto com a compra, numa transação só do banco
         try:
@@ -330,6 +341,31 @@ class CompraSerializer(DoUsuarioMixin, serializers.ModelSerializer):
         except ErroDeFatura as erro:
             # Lista, como nos outros erros: fora do validate() o DRF não normaliza o formato
             raise serializers.ValidationError({'data_compra': [str(erro)]}) from None
+
+
+
+class SimulacaoDaCompraSerializer(RegrasDaCompra, DoUsuarioMixin, serializers.Serializer):
+    """Os dados da compra que decidem as parcelas (lidos da query string)."""
+
+    cartao = serializers.PrimaryKeyRelatedField(queryset=Conta.objects.none())
+    valor_total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    parcelas = serializers.IntegerField()
+    data_compra = serializers.DateField()
+
+    def get_fields(self):
+        campos = super().get_fields()
+        campos['cartao'].queryset = Conta.objects.filter(usuario=self.usuario)
+        return campos
+
+
+class ParcelaSimuladaSerializer(serializers.Serializer):
+    numero = serializers.SerializerMethodField()
+    valor = serializers.DecimalField(max_digits=12, decimal_places=2)
+    vencimento = serializers.DateField()
+    fatura_paga = serializers.BooleanField()
+
+    def get_numero(self, parcela):
+        return f'{parcela.numero}/{parcela.parcelas}'
 
 
 class CampoMes(serializers.Field):

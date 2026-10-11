@@ -1,5 +1,6 @@
 import { ChevronsUpDown } from 'lucide-react'
 import {
+  Fragment,
   useId,
   useState,
   type ChangeEvent,
@@ -180,6 +181,36 @@ export const CampoData: FC<CampoDataProps> = ({ rotulo, erro, className, id, ...
 export type OpcaoDeSelecao = {
   valor: string
   rotulo: string
+  /** Opções seguidas com o mesmo grupo aparecem juntas, sob esse título (ex.: "Cartões") */
+  grupo?: string
+}
+
+type BlocoDeOpcoes = {
+  grupo?: string
+  opcoes: OpcaoDeSelecao[]
+}
+
+const agruparOpcoes = (opcoes: readonly OpcaoDeSelecao[]): BlocoDeOpcoes[] => {
+  const blocos: BlocoDeOpcoes[] = []
+  for (const opcao of opcoes) {
+    const ultimo = blocos.at(-1)
+    if (ultimo && ultimo.grupo === opcao.grupo) {
+      ultimo.opcoes.push(opcao)
+    } else {
+      blocos.push({ grupo: opcao.grupo, opcoes: [opcao] })
+    }
+  }
+  return blocos
+}
+
+const listarOpcoes = (opcoes: readonly OpcaoDeSelecao[]) => {
+  return opcoes.map((opcao) => {
+    return (
+      <option key={opcao.valor} value={opcao.valor}>
+        {opcao.rotulo}
+      </option>
+    )
+  })
 }
 
 type CampoSelecaoProps = Omit<ComponentProps<'select'>, 'children'> &
@@ -216,11 +247,14 @@ export const CampoSelecao: FC<CampoSelecaoProps> = ({
           <option disabled value="">
             {vazio}
           </option>
-          {opcoes.map((opcao) => {
-            return (
-              <option key={opcao.valor} value={opcao.valor}>
-                {opcao.rotulo}
-              </option>
+          {/* <optgroup>: no iPhone, a roda de seleção mostra o título de cada grupo */}
+          {agruparOpcoes(opcoes).map((bloco, indice) => {
+            return bloco.grupo ? (
+              <optgroup key={bloco.grupo} label={bloco.grupo}>
+                {listarOpcoes(bloco.opcoes)}
+              </optgroup>
+            ) : (
+              <Fragment key={`sem-grupo-${indice}`}>{listarOpcoes(bloco.opcoes)}</Fragment>
             )
           })}
         </select>

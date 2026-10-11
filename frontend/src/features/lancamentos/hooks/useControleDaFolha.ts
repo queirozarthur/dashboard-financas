@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import { errosDaFalha as errosDaFalhaGenerico } from '@/core/api'
+import { errosDaFalha as errosDaFalhaGenerico, useContas } from '@/core/api'
+import { dataDeHoje } from '@/core/utils'
 
 import type { Transacao } from '../consts/esquemas'
-import { CAMPOS_DO_LANCAMENTO } from '../erros'
+import { CAMPOS_DA_COMPRA, CAMPOS_DO_LANCAMENTO } from '../erros'
 import {
-  dataDeHoje,
+  compraParaAPI,
+  ehCompra,
   formularioDaTransacao,
   formularioVazio,
   motivoSomenteLeitura,
@@ -16,9 +18,14 @@ import {
   type CampoDoFormulario,
   type ErrosDoFormulario,
   type Formulario,
+  type Preenchimento,
   type TipoDeLancamento,
 } from '../formulario'
-import { useApagarLancamento, useSalvarLancamento } from './useMutacoesDeLancamento'
+import {
+  useApagarLancamento,
+  useSalvarCompra,
+  useSalvarLancamento,
+} from './useMutacoesDeLancamento'
 
 const errosDaFalha = (falha: unknown): ErrosDoFormulario => {
   return errosDaFalhaGenerico(falha, CAMPOS_DO_LANCAMENTO)
@@ -33,12 +40,30 @@ export const useControleDaFolha = () => {
   })
   const [erros, setErros] = useState<ErrosDoFormulario>({})
   const salvamento = useSalvarLancamento()
+  const salvamentoDaCompra = useSalvarCompra()
   const exclusao = useApagarLancamento()
+  const contas = useContas()
 
-  const abrirNovo = useCallback(() => {
+  // Ids (em texto, como no formulário) das contas que são cartão
+  const cartoes = useMemo(() => {
+    return new Set(
+      (contas.data ?? [])
+        .filter((conta) => {
+          return conta.tipo === 'cartao'
+        })
+        .map((conta) => {
+          return String(conta.id)
+        }),
+    )
+  }, [contas.data])
+
+  // Só um lançamento novo vira compra: um lançamento salvo não muda de rota
+  const compra = editando === null && ehCompra(formulario, cartoes)
+
+  const abrirNovo = useCallback((preenchimento: Preenchimento = {}) => {
     setEditando(null)
     // Data lida na hora do toque (num evento), não durante a renderização
-    setFormulario(formularioVazio(dataDeHoje(new Date())))
+    setFormulario(formularioVazio(dataDeHoje(new Date()), preenchimento))
     setErros({})
     setAberta(true)
   }, [])
@@ -61,12 +86,21 @@ export const useControleDaFolha = () => {
     })
   }, [])
 
-  const mudarTipo = useCallback((tipo: TipoDeLancamento) => {
-    setFormulario((anterior) => {
-      return trocarTipo(anterior, tipo)
-    })
-    setErros({})
-  }, [])
+  const mudarTipo = useCallback(
+    (tipo: TipoDeLancamento) => {
+      setFormulario((anterior) => {
+        return trocarTipo(anterior, tipo, cartoes)
+      })
+      setErros({})
+    },
+    [cartoes],
+  )
+
+  const aoSalvar = {
+    onSuccess: () => {
+      setAberta(false)
+    },
+  }
 
   const salvar = () => {
     const encontrados = validar(formulario)
@@ -74,12 +108,19 @@ export const useControleDaFolha = () => {
       setErros(encontrados)
       return
     }
+    if (compra) {
+      salvamentoDaCompra.mutate(compraParaAPI(formulario), {
+        ...aoSalvar,
+        onError: (falha) => {
+          setErros(errosDaFalhaGenerico(falha, CAMPOS_DA_COMPRA))
+        },
+      })
+      return
+    }
     salvamento.mutate(
       { id: editando?.id ?? null, corpo: paraAPI(formulario) },
       {
-        onSuccess: () => {
-          setAberta(false)
-        },
+        ...aoSalvar,
         onError: (falha) => {
           setErros(errosDaFalha(falha))
         },
@@ -92,9 +133,7 @@ export const useControleDaFolha = () => {
       return
     }
     exclusao.mutate(editando.id, {
-      onSuccess: () => {
-        setAberta(false)
-      },
+      ...aoSalvar,
       onError: (falha) => {
         setErros(errosDaFalha(falha))
       },
@@ -115,8 +154,9 @@ export const useControleDaFolha = () => {
     erros,
     alterar,
     mudarTipo,
+    compra,
     salvar,
-    salvando: salvamento.isPending,
+    salvando: salvamento.isPending || salvamentoDaCompra.isPending,
     apagar,
     apagando: exclusao.isPending,
   }

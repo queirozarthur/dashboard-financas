@@ -33,7 +33,9 @@ export const Navegacao: FC = () => {
                 <button
                   aria-label="Novo lançamento"
                   className={cn(CLASSES_DO_ITEM, 'text-marca md:text-marca')}
-                  onClick={abrirNovo}
+                  onClick={() => {
+                    abrirNovo()
+                  }}
                   type="button"
                 >
                   {icone}

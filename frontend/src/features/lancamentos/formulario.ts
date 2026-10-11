@@ -11,7 +11,12 @@ export type Formulario = {
   conta: string
   contaDestino: string
   categoria: string
+  /** Só vale na compra no cartão (despesa com um cartão como conta): de "1" a "48" */
+  parcelas: string
 }
+
+/** O que quem abre a folha pode deixar escolhido (ex.: a tela do cartão já escolhe o cartão). */
+export type Preenchimento = Partial<Pick<Formulario, 'tipo' | 'conta'>>
 
 export type CampoDoFormulario = keyof Formulario
 
@@ -28,14 +33,19 @@ export type CorpoDoLancamento = {
   categoria: number | null
 }
 
-/** "2026-10-04" pela data local (toISOString daria o dia em UTC, que à noite já é amanhã). */
-export const dataDeHoje = (agora: Date): string => {
-  const mes = String(agora.getMonth() + 1).padStart(2, '0')
-  const dia = String(agora.getDate()).padStart(2, '0')
-  return `${agora.getFullYear()}-${mes}-${dia}`
+/** O que vai no corpo do POST em /api/compras/ (a compra gera as parcelas no backend) */
+export type CorpoDaCompra = {
+  cartao: number
+  categoria: number
+  descricao: string
+  valor_total: string
+  parcelas: number
+  data_compra: string
 }
 
-export const formularioVazio = (hoje: string): Formulario => {
+export const MAXIMO_DE_PARCELAS = 48
+
+export const formularioVazio = (hoje: string, preenchimento: Preenchimento = {}): Formulario => {
   return {
     tipo: 'despesa',
     valor: '',
@@ -44,6 +54,8 @@ export const formularioVazio = (hoje: string): Formulario => {
     conta: '',
     contaDestino: '',
     categoria: '',
+    parcelas: '1',
+    ...preenchimento,
   }
 }
 
@@ -56,17 +68,33 @@ export const formularioDaTransacao = (transacao: Transacao): Formulario => {
     conta: String(transacao.conta),
     contaDestino: transacao.conta_destino === null ? '' : String(transacao.conta_destino),
     categoria: transacao.categoria === null ? '' : String(transacao.categoria),
+    parcelas: '1',
   }
 }
 
-/** Trocar o tipo limpa o que deixou de fazer sentido (categoria de outra natureza, destino). */
-export const trocarTipo = (formulario: Formulario, tipo: TipoDeLancamento): Formulario => {
+/**
+ * Trocar o tipo limpa o que deixou de fazer sentido: categoria de outra natureza, destino e,
+ * fora da despesa, o cartão escolhido como conta (receita e transferência não entram no cartão).
+ * `cartoes` traz os ids (em texto) das contas que são cartão.
+ */
+export const trocarTipo = (
+  formulario: Formulario,
+  tipo: TipoDeLancamento,
+  cartoes: ReadonlySet<string>,
+): Formulario => {
+  const contaContinua = tipo === 'despesa' || !cartoes.has(formulario.conta)
   return {
     ...formulario,
     tipo,
+    conta: contaContinua ? formulario.conta : '',
     categoria: tipo === formulario.tipo ? formulario.categoria : '',
     contaDestino: tipo === 'transferencia' ? formulario.contaDestino : '',
   }
+}
+
+/** Despesa num cartão é uma compra: vai para /api/compras/, que divide em parcelas. */
+export const ehCompra = (formulario: Formulario, cartoes: ReadonlySet<string>): boolean => {
+  return formulario.tipo === 'despesa' && cartoes.has(formulario.conta)
 }
 
 /** Confere o básico antes de enviar; as regras completas continuam valendo no backend. */
@@ -108,6 +136,18 @@ export const paraAPI = (formulario: Formulario): CorpoDoLancamento => {
     conta: Number(formulario.conta),
     conta_destino: transferencia ? Number(formulario.contaDestino) : null,
     categoria: transferencia ? null : Number(formulario.categoria),
+  }
+}
+
+export const compraParaAPI = (formulario: Formulario): CorpoDaCompra => {
+  return {
+    cartao: Number(formulario.conta),
+    categoria: Number(formulario.categoria),
+    descricao: formulario.descricao.trim(),
+    // O total, como texto; a divisão em parcelas (e os centavos que sobram) é com o backend
+    valor_total: formulario.valor,
+    parcelas: Number(formulario.parcelas),
+    data_compra: formulario.data,
   }
 }
 

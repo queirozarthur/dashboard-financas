@@ -1,15 +1,11 @@
+import { lerData } from '@/core/utils'
+
 import type { Transacao } from './consts/esquemas'
 
 export type DiaDaLista = {
   data: string
   titulo: string
   transacoes: Transacao[]
-}
-
-// "2026-10-02" como data local (new Date("2026-10-02") seria meia-noite UTC: o dia anterior aqui)
-const dataLocal = (texto: string): Date => {
-  const [ano = 0, mes = 1, dia = 1] = texto.split('-').map(Number)
-  return new Date(ano, mes - 1, dia)
 }
 
 const mesmoDia = (a: Date, b: Date): boolean => {
@@ -34,7 +30,7 @@ const formatoComAno = new Intl.DateTimeFormat('pt-BR', {
 
 /** "Hoje", "Ontem" ou "Sexta-feira, 2 de outubro" (com o ano, se não for o ano corrente). */
 export const tituloDoDia = (texto: string, hoje: Date): string => {
-  const dia = dataLocal(texto)
+  const dia = lerData(texto)
   const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1)
   if (mesmoDia(dia, hoje)) {
     return 'Hoje'

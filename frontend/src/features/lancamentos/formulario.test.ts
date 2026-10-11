@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
+import { errosDoDRF } from '@/core/api'
+
 import type { Transacao } from './consts/esquemas'
-import { errosDaApi } from './erros'
+import { CAMPOS_DA_COMPRA, errosDaApi } from './erros'
 import {
-  dataDeHoje,
+  compraParaAPI,
+  ehCompra,
   formularioDaTransacao,
   formularioVazio,
   motivoSomenteLeitura,
@@ -22,7 +25,12 @@ const despesaCompleta: Formulario = {
   conta: '1',
   contaDestino: '',
   categoria: '7',
+  parcelas: '1',
 }
+
+// O cartão Nubank tem o id 4
+const CARTOES: ReadonlySet<string> = new Set(['4'])
+const SEM_CARTOES: ReadonlySet<string> = new Set()
 
 const transacao: Transacao = {
   id: 5,
@@ -45,18 +53,20 @@ const transacao: Transacao = {
   competencia: null,
 }
 
-describe('dataDeHoje', () => {
-  it('usa a data local, com zeros', () => {
-    expect(dataDeHoje(new Date(2026, 0, 5, 23, 30))).toBe('2026-01-05')
-  })
-})
-
 describe('formulário', () => {
-  it('começa como despesa, com a data de hoje', () => {
+  it('começa como despesa à vista, com a data de hoje', () => {
     expect(formularioVazio('2026-10-04')).toMatchObject({
       tipo: 'despesa',
       data: '2026-10-04',
       valor: '',
+      parcelas: '1',
+    })
+  })
+
+  it('quem abre pode deixar a conta escolhida (a tela do cartão)', () => {
+    expect(formularioVazio('2026-10-04', { conta: '4' })).toMatchObject({
+      tipo: 'despesa',
+      conta: '4',
     })
   })
 
@@ -69,22 +79,70 @@ describe('formulário', () => {
       conta: '1',
       contaDestino: '3',
       categoria: '',
+      parcelas: '1',
     })
   })
 })
 
 describe('trocarTipo', () => {
   it('de despesa para receita limpa a categoria (a natureza mudou)', () => {
-    expect(trocarTipo(despesaCompleta, 'receita').categoria).toBe('')
+    expect(trocarTipo(despesaCompleta, 'receita', SEM_CARTOES).categoria).toBe('')
   })
 
   it('sair de transferência limpa o destino', () => {
     const transferencia = { ...despesaCompleta, tipo: 'transferencia' as const, contaDestino: '3' }
-    expect(trocarTipo(transferencia, 'despesa').contaDestino).toBe('')
+    expect(trocarTipo(transferencia, 'despesa', SEM_CARTOES).contaDestino).toBe('')
   })
 
   it('valor, data e conta continuam', () => {
-    expect(trocarTipo(despesaCompleta, 'receita')).toMatchObject({ valor: '84.30', conta: '1' })
+    expect(trocarTipo(despesaCompleta, 'receita', CARTOES)).toMatchObject({
+      valor: '84.30',
+      conta: '1',
+    })
+  })
+
+  it('receita e transferência não ficam com o cartão como conta', () => {
+    const compra = { ...despesaCompleta, conta: '4' }
+    expect(trocarTipo(compra, 'receita', CARTOES).conta).toBe('')
+    expect(trocarTipo(compra, 'transferencia', CARTOES).conta).toBe('')
+  })
+})
+
+describe('compra no cartão', () => {
+  const compra = { ...despesaCompleta, conta: '4', parcelas: '3' }
+
+  it('é a despesa com um cartão como conta', () => {
+    expect(ehCompra(compra, CARTOES)).toBe(true)
+    expect(ehCompra(despesaCompleta, CARTOES)).toBe(false)
+    expect(ehCompra({ ...compra, tipo: 'receita' }, CARTOES)).toBe(false)
+  })
+
+  it('vai para a API com o total em texto e as parcelas em número', () => {
+    expect(compraParaAPI(compra)).toEqual({
+      cartao: 4,
+      categoria: 7,
+      descricao: 'Feira',
+      valor_total: '84.30',
+      parcelas: 3,
+      data_compra: '2026-10-04',
+    })
+  })
+
+  it('erros da API de compras caem nos campos do mesmo formulário', () => {
+    expect(
+      errosDoDRF(
+        {
+          valor_total: ['O valor precisa ser maior que zero.'],
+          data_compra: ['A parcela 1 cairia na fatura que vence em 05/11/2026, que já foi paga.'],
+          cartao: ['Compras só podem ser lançadas em conta do tipo cartão.'],
+        },
+        CAMPOS_DA_COMPRA,
+      ),
+    ).toEqual({
+      valor: 'O valor precisa ser maior que zero.',
+      data: 'A parcela 1 cairia na fatura que vence em 05/11/2026, que já foi paga.',
+      conta: 'Compras só podem ser lançadas em conta do tipo cartão.',
+    })
   })
 })
 

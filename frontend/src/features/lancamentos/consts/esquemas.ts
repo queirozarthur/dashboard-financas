@@ -34,3 +34,21 @@ export const esquemaPaginaDeTransacoes = z.object({
 
 export type Transacao = z.infer<typeof esquemaTransacao>
 export type PaginaDeTransacoes = z.infer<typeof esquemaPaginaDeTransacoes>
+
+// GET /api/compras/simulacao/: as parcelas que a compra geraria, antes de salvar
+export const esquemaSimulacao = z.object({
+  parcelas: z.array(
+    z.object({
+      numero: z.string(),
+      valor: dinheiro,
+      vencimento: z.string(),
+      fatura_paga: z.boolean(),
+    }),
+  ),
+})
+
+// Da compra criada, a folha só precisa saber que deu certo
+export const esquemaCompraCriada = z.object({ id: z.number() })
+
+export type Simulacao = z.infer<typeof esquemaSimulacao>
+export type ParcelaSimulada = Simulacao['parcelas'][number]

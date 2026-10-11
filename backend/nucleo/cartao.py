@@ -70,20 +70,50 @@ def com_data_de_pagamento(parcelas):
     return parcelas.annotate(data_pagamento=Subquery(pagamento))
 
 
-@transaction.atomic
-def registrar_compra(*, usuario, cartao, categoria, valor_total, parcelas, data_compra, descricao=''):
+@dataclass
+class ParcelaSimulada:
+    numero: int
+    parcelas: int
+    valor: Decimal
+    vencimento: date
+    fatura_paga: bool
+
+
+def simular_compra(*, cartao, valor_total, parcelas, data_compra):
+    """As parcelas que a compra geraria, sem gravar nada: valor, vencimento e se a fatura já foi paga."""
     if not cartao.e_cartao:
         raise ValueError('Compras só podem ser lançadas em conta do tipo cartão.')
 
     vencimentos = vencimentos_das_parcelas(cartao, data_compra, parcelas)
+    pagas = set(
+        pagamentos_do_cartao(cartao)
+        .filter(fatura_paga__in=vencimentos)
+        .values_list('fatura_paga', flat=True)
+    )
+    return [
+        ParcelaSimulada(
+            numero=numero,
+            parcelas=parcelas,
+            valor=valor,
+            vencimento=data_vencimento,
+            fatura_paga=data_vencimento in pagas,
+        )
+        for numero, (valor, data_vencimento)
+        in enumerate(zip(dividir_valor(valor_total, parcelas), vencimentos), start=1)
+    ]
+
+
+@transaction.atomic
+def registrar_compra(*, usuario, cartao, categoria, valor_total, parcelas, data_compra, descricao=''):
+    simuladas = simular_compra(
+        cartao=cartao, valor_total=valor_total, parcelas=parcelas, data_compra=data_compra
+    )
     # Uma parcela nova numa fatura já paga deixaria o pagamento menor que a fatura
-    pagas = set(pagamentos_do_cartao(cartao).filter(fatura_paga__in=vencimentos)
-                .values_list('fatura_paga', flat=True))
-    for numero, data_vencimento in enumerate(vencimentos, start=1):
-        if data_vencimento in pagas:
+    for parcela in simuladas:
+        if parcela.fatura_paga:
             raise ErroDeFatura(
-                f'A parcela {numero} cairia na fatura que vence em {data_vencimento:%d/%m/%Y}, '
-                'que já foi paga.'
+                f'A parcela {parcela.numero} cairia na fatura que vence em '
+                f'{parcela.vencimento:%d/%m/%Y}, que já foi paga.'
             )
 
     compra = Compra.objects.create(
@@ -102,14 +132,13 @@ def registrar_compra(*, usuario, cartao, categoria, valor_total, parcelas, data_
             categoria=categoria,
             tipo=Transacao.Tipo.DESPESA,
             descricao=descricao,
-            valor=valor,
+            valor=parcela.valor,
             # A data da parcela é o vencimento da sua fatura: é nesse mês que ela pesa
-            data=data_vencimento,
+            data=parcela.vencimento,
             compra=compra,
-            numero_parcela=numero,
+            numero_parcela=parcela.numero,
         )
-        for numero, (valor, data_vencimento)
-        in enumerate(zip(dividir_valor(valor_total, parcelas), vencimentos), start=1)
+        for parcela in simuladas
     ])
     return compra
 

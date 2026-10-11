@@ -1,20 +1,10 @@
 import type { FC } from 'react'
 
 import { Grupo, Linha, Valor } from '@/core/ui'
+import { dataPorExtenso } from '@/core/utils'
 
 import { detalheDoLancamento, tituloDoLancamento } from '../apresentacao'
 import type { Transacao } from '../consts/esquemas'
-
-const formatoDaData = new Intl.DateTimeFormat('pt-BR', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-})
-
-const dataLegivel = (texto: string): string => {
-  const [ano = 0, mes = 1, dia = 1] = texto.split('-').map(Number)
-  return formatoDaData.format(new Date(ano, mes - 1, dia))
-}
 
 type DetalhesSomenteLeituraProps = {
   transacao: Transacao
@@ -34,7 +24,7 @@ export const DetalhesSomenteLeitura: FC<DetalhesSomenteLeituraProps> = ({ transa
           />
         }
       />
-      <Linha rotulo="Data" valor={dataLegivel(transacao.data)} />
+      <Linha rotulo="Data" valor={dataPorExtenso(transacao.data, { comAno: true })} />
       <Linha rotulo="Onde" valor={detalheDoLancamento(transacao)} />
     </Grupo>
   )

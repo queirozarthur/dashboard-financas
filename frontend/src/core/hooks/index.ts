@@ -1,3 +1,4 @@
+export { useAtrasado } from './useAtrasado'
 export { useAoAparecer } from './useAoAparecer'
 export { deveFechar, useArrastarParaFechar } from './useArrastarParaFechar'
 export { deveFicarAberta, LARGURA_DA_ACAO, useDeslizarLinha } from './useDeslizarLinha'
